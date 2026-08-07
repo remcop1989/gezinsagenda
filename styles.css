@@ -247,9 +247,11 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 /* ---------- Lists ---------- */
 .lists-toolbar{display:flex; justify-content:flex-end; margin-bottom:22px;}
 .lists-wrap{display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap;}
-.lists-nav{width:220px; flex:0 0 220px; display:flex; flex-direction:column; gap:6px; position:relative; scrollbar-width:thin;}
+.lists-nav-wrap{width:220px; flex:0 0 220px; position:relative;}
+.lists-nav{width:100%; display:flex; flex-direction:column; gap:6px; scrollbar-width:thin;}
 .lists-nav::-webkit-scrollbar{height:6px;}
 .lists-nav::-webkit-scrollbar-thumb{background:var(--line); border-radius:3px;}
+.lists-nav-hint{display:none;}
 .list-nav-btn{
   text-align:left; padding:10px 12px; border-radius:10px; border:1px solid transparent; background:transparent;
   font-weight:600; font-size:14px; color:var(--ink-soft); display:flex; align-items:center; gap:8px;
@@ -365,11 +367,24 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 @media (max-width: 720px){
   .row2,.row3{grid-template-columns:1fr;}
   .range-label{min-width:0;}
-  .lists-nav{width:100%; flex:1 1 100%; flex-direction:row; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:4px;}
+  .lists-nav-wrap{width:100%; flex:1 1 100%;}
+  .lists-nav{flex-direction:row; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:4px; padding-right:34px;}
   .list-nav-btn{flex:0 0 auto; white-space:nowrap;}
-  .lists-nav.scrollable{
-    mask-image:linear-gradient(to right, black 90%, transparent 100%);
-    -webkit-mask-image:linear-gradient(to right, black 90%, transparent 100%);
+  .lists-nav-wrap.scrollable .lists-nav{
+    mask-image:linear-gradient(to right, black 78%, transparent 100%);
+    -webkit-mask-image:linear-gradient(to right, black 78%, transparent 100%);
+  }
+  .lists-nav-hint{
+    position:absolute; top:0; bottom:4px; right:0; width:34px;
+    align-items:center; justify-content:flex-end; pointer-events:none;
+    background:linear-gradient(to right, transparent, var(--paper) 45%);
+  }
+  .lists-nav-wrap.scrollable .lists-nav-hint{display:flex;}
+  .lists-nav-hint span{
+    width:26px; height:26px; border-radius:50%;
+    background:var(--paper-raised); box-shadow:0 1px 4px rgba(32,48,44,.25);
+    display:flex; align-items:center; justify-content:center;
+    color:var(--accent-2); font-size:16px; font-weight:700; line-height:1;
   }
   .lists-toolbar .btn{width:100%; justify-content:center;}
   .kid-nav .lbl{min-width:0; font-size:16px;}

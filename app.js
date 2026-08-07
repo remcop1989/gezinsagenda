@@ -1292,7 +1292,8 @@ function renderLists(){
     b.addEventListener('click', ()=>{ activeListId = b.dataset.lid; renderLists(); });
   });
   requestAnimationFrame(()=>{
-    nav.classList.toggle('scrollable', nav.scrollWidth > nav.clientWidth + 2);
+    const wrap = document.getElementById('lists-nav-wrap');
+    if(wrap) wrap.classList.toggle('scrollable', nav.scrollWidth > nav.clientWidth + 2);
   });
 
   const main = document.getElementById('list-main');
