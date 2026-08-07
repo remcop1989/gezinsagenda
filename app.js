@@ -1291,6 +1291,9 @@ function renderLists(){
   nav.querySelectorAll('.list-nav-btn').forEach(b=>{
     b.addEventListener('click', ()=>{ activeListId = b.dataset.lid; renderLists(); });
   });
+  requestAnimationFrame(()=>{
+    nav.classList.toggle('scrollable', nav.scrollWidth > nav.clientWidth + 2);
+  });
 
   const main = document.getElementById('list-main');
   const list = listById(activeListId);
