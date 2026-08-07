@@ -49,6 +49,9 @@ Een lichte, installeerbare webapp (PWA) waarmee een gezin samen één agenda, ki
 
 Gebruik dus losse blokken: `allow read`, `allow create, update` (met de datavalidatie erin) en `allow delete` (zonder afhankelijkheid van `request.resource`).
 
+#### Hoe Firestore de datastructuur aanmaakt
+Firestore is een schemaloze (NoSQL document-)database: er hoeven van tevoren geen tabellen, kolommen of rijen te worden gedefinieerd in de Firebase Console. `firebase-sync.js` schrijft data naar paden als `households/{gezinscode}/events/{eventId}`; zodra de app voor het eerst iets naar zo'n pad schrijft, maakt Firestore die collectie en dat document vanzelf aan. De security rules bepalen alleen wíe mag lezen/schrijven, niet hoe de data eruitziet — dat betekent ook dat elke nieuwe, unieke gezinscode automatisch zijn eigen, gescheiden datapad krijgt zonder enige configuratie.
+
 ### 2. Lokaal draaien
 Omdat de app JavaScript-modules (`type="module"`) gebruikt, moet je hem via een lokale webserver openen (niet direct als `file://`), bijvoorbeeld:
 
@@ -65,6 +68,18 @@ Open daarna `http://localhost:8000`.
 ### 3. Gebruiken
 Bij de eerste keer openen vraagt de app om een **gezinscode** te verzinnen (werkt als wachtwoord). Iedereen die dezelfde code invoert op zijn eigen apparaat ziet en bewerkt dezelfde agenda.
 
+### 4. Meerdere gezinnen / testers
+Er is geen aparte "gezin aanmaken"-functie nodig. De gezinscode is direct het scheidingscriterium: elke unieke code krijgt automatisch zijn eigen, volledig gescheiden pad in Firestore, zonder dat daar in de Firebase Console iets voor hoeft te worden opgezet (zie ["Hoe Firestore de datastructuur aanmaakt"](#hoe-firestore-de-datastructuur-aanmaakt) hieronder).
+
+Wil een ander gezin de app los uitproberen?
+1. Laat diegene de app openen op een eigen apparaat (of, op een gedeeld apparaat, eerst via **Instellingen → Wissel van gezinscode** uitloggen bij het huidige gezin).
+2. Laat diegene bij het welkomstscherm een **eigen, unieke** gezinscode verzinnen (niet dezelfde als een ander test-gezin).
+3. Klaar — dat gezin heeft nu zijn eigen agenda, geheel los van de rest.
+
+Dit wordt ook kort toegelicht op het welkomstscherm zelf.
+
+**Gezinscode kwijt?** Er is geen "wachtwoord vergeten"-functie (er is geen account of e-mailadres), maar zolang minstens één apparaat van dat gezin nog is ingelogd, staat de huidige code zichtbaar in **Instellingen → Gezinscode & back-up**. Is echt niemand meer ingelogd, dan is de data alleen nog terug te halen via een eerder gemaakte export (`.json`-back-up) — anders is hij niet meer toegankelijk via de app.
+
 ## Deployen
 De app is statisch (geen server-side code nodig) en kan direct gehost worden op bijvoorbeeld:
 - Firebase Hosting
@@ -74,3 +89,4 @@ De app is statisch (geen server-side code nodig) en kan direct gehost worden op 
 ## Bekende beperkingen
 - Meldingen werken alleen lokaal en alleen als de app recent geopend is geweest — geen gegarandeerde achtergrond-push.
 - De gezinscode is geen echte authenticatie, maar werkt als gedeeld wachtwoord — beveilig dit vooral via Firestore-rules.
+- Er is geen "wachtwoord vergeten"-functie voor de gezinscode. Zolang minstens één apparaat nog is ingelogd staat de code in Instellingen; is niemand meer ingelogd, dan is de data alleen terug te halen via een eerder gemaakte export.

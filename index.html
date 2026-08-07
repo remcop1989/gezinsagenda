@@ -100,6 +100,7 @@
     <div class="card">
       <h2 style="margin-top:0;">Gezinscode & back-up</h2>
       <p class="hint" style="margin-top:0;">Alle gegevens worden gesynchroniseerd via jullie gezinscode — elk apparaat met dezelfde code ziet dezelfde agenda. Gebruik export/import als extra back-up of om iets terug te zetten.</p>
+      <p class="hint" style="margin-top:0;">Jullie huidige gezinscode: <strong id="current-hh-code">—</strong> <span class="hint">(is iemand die vergeten? Kijk hier op een apparaat dat nog wel is ingelogd en deel 'm opnieuw.)</span></p>
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
         <button class="btn" id="btn-export">⬇ Exporteer gegevens (.json)</button>
         <button class="btn" id="btn-import">⬆ Importeer gegevens</button>
@@ -122,6 +123,7 @@
   <div class="hh-gate-card">
     <h2>👋 Welkom bij jullie Gezinsagenda</h2>
     <p>Spreek samen één "gezinscode" af (mag alles zijn, bijv. <code>familie-jansen-thuis</code>). Iedereen die dezelfde code invoert op zijn eigen apparaat, ziet en bewerkt dezelfde agenda.</p>
+    <p class="hint">Ben je van een ander gezin en wil je de app apart uitproberen? Verzin dan gewoon je eigen, unieke code — elke code heeft zijn eigen, volledig gescheiden agenda.</p>
     <input type="text" id="hh-code-input" placeholder="Jullie gezinscode">
     <div class="hh-gate-error" id="hh-gate-error"></div>
     <button class="btn btn-primary" id="hh-code-submit" style="width:100%; justify-content:center;">Doorgaan</button>

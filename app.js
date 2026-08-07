@@ -1460,6 +1460,9 @@ document.getElementById('btn-new-list').addEventListener('click', openNewListMod
    INSTELLINGEN: gezinsleden + export/import
    ========================================================= */
 function renderSettings(){
+  const codeEl = document.getElementById('current-hh-code');
+  if(codeEl) codeEl.textContent = localStorage.getItem('gezinsagenda-hh-code') || '—';
+
   const wrap = document.getElementById('members-list');
   wrap.innerHTML = state.familyMembers.map(m=>`
     <div class="member-row">
