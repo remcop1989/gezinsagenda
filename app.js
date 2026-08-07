@@ -918,8 +918,9 @@ function openEventModal(ev, prefill){
     document.getElementById('f-end-time').required = !on;
   });
 
-  // "Tot datum"/"Tot tijd" automatisch meeschuiven met "Van datum"/"Van tijd",
-  // met behoud van de oorspronkelijke duur van de afspraak.
+  // "Tot datum"/"Tot tijd" schuift automatisch mee als je "Van" later zet
+  // (duur blijft gelijk). Zet je "Van" juist vróeger, dan blijft "Tot" staan
+  // en wordt de afspraak dus langer.
   const startDateEl = document.getElementById('f-start-date');
   const startTimeEl = document.getElementById('f-start-time');
   const endDateEl = document.getElementById('f-end-date');
@@ -929,7 +930,8 @@ function openEventModal(ev, prefill){
     const newStartDT = combineDateTime(startDateEl.value, startTimeEl.value || '00:00');
     const curEndDT = combineDateTime(endDateEl.value, endTimeEl.value || '00:00');
     const duration = curEndDT - prevStartDT;
-    if(startDateEl.value && (alldaySel.checked || startTimeEl.value) && !isNaN(newStartDT) && duration >= 0){
+    const movedLater = newStartDT > prevStartDT;
+    if(movedLater && startDateEl.value && (alldaySel.checked || startTimeEl.value) && !isNaN(newStartDT) && duration >= 0){
       const newEndDT = new Date(newStartDT.getTime() + duration);
       endDateEl.value = fmtISODate(newEndDT);
       if(!alldaySel.checked) endTimeEl.value = fmtTimeHM(newEndDT);
