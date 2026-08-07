@@ -964,7 +964,7 @@ function openEventModal(ev, prefill){
     const startDT = combineDateTime(startDateEl.value, startTimeEl.value || '00:00');
     const newEndDT = combineDateTime(endDateEl.value, endTimeEl.value || '00:00');
     if(newEndDT < startDT){
-      alertDialog('"Tot" kan niet vóór "Van" liggen');
+      alertDialog('"Tot" kan niet vóór "Van" liggen. Het einde van een afspraak moet op of na het begin liggen. De eind-datum/tijd is teruggezet naar de vorige waarde — pas deze aan om verder te gaan.');
       endDateEl.value = prevEndDateVal;
       endTimeEl.value = prevEndTimeVal;
       return;
@@ -1014,7 +1014,7 @@ function openEventModal(ev, prefill){
     const sd = document.getElementById('f-start-date').value, st = isAllDay ? '00:00' : document.getElementById('f-start-time').value;
     const ed = document.getElementById('f-end-date').value, et = isAllDay ? '23:59' : document.getElementById('f-end-time').value;
     const startDT = combineDateTime(sd, st), endDT = combineDateTime(ed, et);
-    if(endDT < startDT){ alertDialog('"Tot" kan niet vóór "Van" liggen'); return; }
+    if(endDT < startDT){ alertDialog('"Tot" kan niet vóór "Van" liggen. Het einde van een afspraak moet op of na het begin liggen. De afspraak is nog niet opgeslagen — pas de datum/tijd aan en probeer het opnieuw.'); return; }
     const participants = Array.from(document.querySelectorAll('#event-form .ev-participant-cb:checked')).map(i=>i.value);
     const hiddenFromKidView = Array.from(document.querySelectorAll('#event-form .ev-hide-kid-cb:checked')).map(i=>i.value).filter(id=>participants.includes(id));
     const freq = document.getElementById('f-rec-freq').value;
@@ -1080,7 +1080,7 @@ document.getElementById('modal-overlay').addEventListener('click', e=>{
   if(e.target.id==='modal-overlay') closeModal();
 });
 function confirmDialog(msg, onYes){
-  document.getElementById('modal-content').innerHTML = `
+  document.getElementById('alert-content').innerHTML = `
     <div class="modal-head"><h2>Weet je het zeker?</h2></div>
     <p>${escapeHtml(msg)}</p>
     <div class="modal-actions"><div></div>
@@ -1089,15 +1089,16 @@ function confirmDialog(msg, onYes){
         <button class="btn btn-danger" id="cd-yes">Ja, verwijderen</button>
       </div>
     </div>`;
-  document.getElementById('cd-no').addEventListener('click', closeModal);
-  document.getElementById('cd-yes').addEventListener('click', onYes);
-  openModal();
+  document.getElementById('cd-no').addEventListener('click', closeAlert);
+  document.getElementById('cd-yes').addEventListener('click', ()=>{ closeAlert(); onYes(); });
+  openAlert();
 }
 
-/* Gecentreerde waarschuwing bovenop de open afspraak-popup. In tegenstelling tot
-   confirmDialog() wordt hier niet de inhoud van de popup vervangen: de popup (met
-   alle ingevulde velden) blijft gewoon staan, en de melding verschijnt er gecentreerd
-   overheen. Sluit alleen via de knop, niet via een klik op de achtergrond. */
+/* Gecentreerde melding op het scherm, los van de eventueel geopende afspraak-popup
+   (die blijft — met alle ingevulde velden — gewoon zichtbaar op de achtergrond staan).
+   Sluit alleen via een knop, niet via een klik op de achtergrond. Wordt gebruikt voor
+   zowel bevestigingsvragen (confirmDialog, 2 knoppen) als losse waarschuwingen
+   (alertDialog, 1 knop). */
 function alertDialog(msg, onOk){
   document.getElementById('alert-content').innerHTML = `
     <div class="modal-head"><h2>Let op</h2></div>
@@ -1113,6 +1114,7 @@ function alertDialog(msg, onOk){
 }
 function openAlert(){ document.getElementById('alert-overlay').classList.add('open'); }
 function closeAlert(){ document.getElementById('alert-overlay').classList.remove('open'); }
+
 
 /* =========================================================
    KINDWEERGAVE — dit is de eigen agenda van het kind:
