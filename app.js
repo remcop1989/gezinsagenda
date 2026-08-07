@@ -964,7 +964,7 @@ function openEventModal(ev, prefill){
     const startDT = combineDateTime(startDateEl.value, startTimeEl.value || '00:00');
     const newEndDT = combineDateTime(endDateEl.value, endTimeEl.value || '00:00');
     if(newEndDT < startDT){
-      showToast('"Tot" kan niet vóór "Van" liggen');
+      alertDialog('"Tot" kan niet vóór "Van" liggen');
       endDateEl.value = prevEndDateVal;
       endTimeEl.value = prevEndTimeVal;
       return;
@@ -1014,7 +1014,7 @@ function openEventModal(ev, prefill){
     const sd = document.getElementById('f-start-date').value, st = isAllDay ? '00:00' : document.getElementById('f-start-time').value;
     const ed = document.getElementById('f-end-date').value, et = isAllDay ? '23:59' : document.getElementById('f-end-time').value;
     const startDT = combineDateTime(sd, st), endDT = combineDateTime(ed, et);
-    if(endDT < startDT){ showToast('Eindtijd ligt vóór begintijd'); return; }
+    if(endDT < startDT){ alertDialog('"Tot" kan niet vóór "Van" liggen'); return; }
     const participants = Array.from(document.querySelectorAll('#event-form .ev-participant-cb:checked')).map(i=>i.value);
     const hiddenFromKidView = Array.from(document.querySelectorAll('#event-form .ev-hide-kid-cb:checked')).map(i=>i.value).filter(id=>participants.includes(id));
     const freq = document.getElementById('f-rec-freq').value;
@@ -1093,6 +1093,26 @@ function confirmDialog(msg, onYes){
   document.getElementById('cd-yes').addEventListener('click', onYes);
   openModal();
 }
+
+/* Gecentreerde waarschuwing bovenop de open afspraak-popup. In tegenstelling tot
+   confirmDialog() wordt hier niet de inhoud van de popup vervangen: de popup (met
+   alle ingevulde velden) blijft gewoon staan, en de melding verschijnt er gecentreerd
+   overheen. Sluit alleen via de knop, niet via een klik op de achtergrond. */
+function alertDialog(msg, onOk){
+  document.getElementById('alert-content').innerHTML = `
+    <div class="modal-head"><h2>Let op</h2></div>
+    <p>${escapeHtml(msg)}</p>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="ad-ok">Oké</button>
+    </div>`;
+  document.getElementById('ad-ok').addEventListener('click', ()=>{
+    closeAlert();
+    if(onOk) onOk();
+  });
+  openAlert();
+}
+function openAlert(){ document.getElementById('alert-overlay').classList.add('open'); }
+function closeAlert(){ document.getElementById('alert-overlay').classList.remove('open'); }
 
 /* =========================================================
    KINDWEERGAVE — dit is de eigen agenda van het kind:
