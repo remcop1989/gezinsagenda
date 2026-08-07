@@ -204,6 +204,18 @@ function showToast(msg){
   showToast._h=setTimeout(()=>t.classList.remove('show'),2600);
 }
 
+/* Firestore-schrijfacties (setDoc/deleteDoc) gebeuren optimistisch: de wijziging is meteen
+   lokaal zichtbaar, ook vóórdat de server hem heeft goedgekeurd. Wijst de server de wijziging
+   alsnog af (bijv. door de beveiligingsregels of een App Check-probleem), dan draait Firestore
+   dat stilletjes terug via de eerstvolgende onSnapshot — zonder melding. Elke fbSync-aanroep
+   die hieronder staat moet daarom altijd deze .catch krijgen, zodat de gebruiker een duidelijke
+   melding ziet in plaats van dat een wijziging onverklaarbaar "vanzelf" terugkomt. */
+function reportSyncError(err){
+  console.error('Synchronisatie met Firebase mislukt:', err);
+  const code = err && err.code ? ' ('+err.code+')' : '';
+  showToast('Wijziging kon niet worden opgeslagen'+code+' — probeer het opnieuw.');
+}
+
 /* Kleur voor event-blok: 1 deelnemer -> diens kleur; meerdere -> kleur van de eerste deelnemer */
 function eventColor(ev){
   if(ev.participants && ev.participants.length){
@@ -987,7 +999,7 @@ function openEventModal(ev, prefill){
   if(delBtn) delBtn.addEventListener('click', ()=>{
     confirmDialog('Deze afspraak (en alle herhalingen) verwijderen?', ()=>{
       state.events = state.events.filter(x=>x.id!==data.id);
-      window.fbSync.deleteEventRemote(data.id); closeModal(); renderAgenda();
+      window.fbSync.deleteEventRemote(data.id).catch(reportSyncError); closeModal(); renderAgenda();
       if(document.getElementById('panel-kind').classList.contains('active')) renderKid();
       showToast('Afspraak verwijderd');
     });
@@ -1048,7 +1060,7 @@ function openEventModal(ev, prefill){
     } else {
       state.events.push(newEvent);
     }
-    window.fbSync.syncEvent(newEvent); closeModal(); renderAgenda();
+    window.fbSync.syncEvent(newEvent).catch(reportSyncError); closeModal(); renderAgenda();
     if(document.getElementById('panel-kind').classList.contains('active')) renderKid();
     showToast('Afspraak opgeslagen');
   });
@@ -1292,22 +1304,22 @@ function renderLists(){
   main.querySelectorAll('.li-check').forEach(cb=>{
     cb.addEventListener('change', ()=>{
       const it = list.items.find(x=>x.id===cb.dataset.iid);
-      it.done = cb.checked; window.fbSync.syncList(list); renderLists();
+      it.done = cb.checked; window.fbSync.syncList(list).catch(reportSyncError); renderLists();
     });
   });
   main.querySelectorAll('.li-del').forEach(b=>{
     b.addEventListener('click', ()=>{
-      list.items = list.items.filter(x=>x.id!==b.dataset.iid); window.fbSync.syncList(list); renderLists();
+      list.items = list.items.filter(x=>x.id!==b.dataset.iid); window.fbSync.syncList(list).catch(reportSyncError); renderLists();
     });
   });
   document.getElementById('btn-clear-done').addEventListener('click', ()=>{
-    list.items = list.items.filter(x=>!x.done); window.fbSync.syncList(list); renderLists();
+    list.items = list.items.filter(x=>!x.done); window.fbSync.syncList(list).catch(reportSyncError); renderLists();
   });
   document.getElementById('btn-del-list').addEventListener('click', ()=>{
     confirmDialog('Deze hele lijst verwijderen?', ()=>{
       state.lists = state.lists.filter(x=>x.id!==list.id);
       activeListId = state.lists.length ? state.lists[0].id : null;
-      window.fbSync.deleteListRemote(list.id); closeModal(); renderLists();
+      window.fbSync.deleteListRemote(list.id).catch(reportSyncError); closeModal(); renderLists();
     });
   });
   function addItem(){
@@ -1319,7 +1331,7 @@ function renderLists(){
       item.due = document.getElementById('new-item-due').value;
     }
     list.items.push(item);
-    window.fbSync.syncList(list); renderLists();
+    window.fbSync.syncList(list).catch(reportSyncError); renderLists();
   }
   document.getElementById('btn-add-item').addEventListener('click', addItem);
   document.getElementById('new-item-text').addEventListener('keydown', e=>{ if(e.key==='Enter') addItem(); });
@@ -1349,7 +1361,7 @@ function openNewListModal(){
     const kind = document.getElementById('nl-kind').value;
     const l = {id:uid(), name, kind, items:[]};
     state.lists.push(l); activeListId = l.id;
-    window.fbSync.syncList(l); closeModal(); renderLists();
+    window.fbSync.syncList(l).catch(reportSyncError); closeModal(); renderLists();
   });
   openModal();
 }
@@ -1375,8 +1387,8 @@ function renderSettings(){
       state.familyMembers = state.familyMembers.filter(m=>m.id!==b.dataset.del);
       state.events.forEach(ev=> ev.participants = ev.participants.filter(id=>id!==b.dataset.del));
       if(kidId===b.dataset.del) kidId = null;
-      window.fbSync.syncMembers(state.familyMembers);
-      state.events.forEach(ev=> window.fbSync.syncEvent(ev));
+      window.fbSync.syncMembers(state.familyMembers).catch(reportSyncError);
+      state.events.forEach(ev=> window.fbSync.syncEvent(ev).catch(reportSyncError));
       closeModal(); renderSettings();
     });
   }));
@@ -1431,7 +1443,7 @@ function openMemberModal(existing){
     } else {
       state.familyMembers.push(member);
     }
-    window.fbSync.syncMembers(state.familyMembers); closeModal(); renderSettings();
+    window.fbSync.syncMembers(state.familyMembers).catch(reportSyncError); closeModal(); renderSettings();
   });
   openModal();
 }
@@ -1456,7 +1468,7 @@ document.getElementById('import-file').addEventListener('change', (e)=>{
       parsed.familyMembers.forEach(m=>{ if(!m.role) m.role = 'volwassene'; });
       confirmDialog('Huidige gegevens vervangen door dit back-upbestand?', ()=>{
         state = parsed;
-        window.fbSync.replaceAll(state.familyMembers, state.events, state.lists);
+        window.fbSync.replaceAll(state.familyMembers, state.events, state.lists).catch(reportSyncError);
         closeModal();
         renderAgenda(); renderKid(); renderLists(); renderSettings();
         showToast('Gegevens geïmporteerd');
@@ -1499,7 +1511,7 @@ function startApp(code){
       if(members === null){
         const defaults = defaultFamilyMembers();
         state.familyMembers = defaults;
-        window.fbSync.syncMembers(defaults);
+        window.fbSync.syncMembers(defaults).catch(reportSyncError);
       } else {
         state.familyMembers = members;
       }
@@ -1516,7 +1528,7 @@ function startApp(code){
         listsSeeded = true;
         const defaults = defaultLists();
         state.lists = defaults;
-        defaults.forEach(l=> window.fbSync.syncList(l));
+        defaults.forEach(l=> window.fbSync.syncList(l).catch(reportSyncError));
       } else {
         state.lists = lists;
       }
