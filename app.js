@@ -1654,7 +1654,7 @@ document.getElementById('hh-code-submit').addEventListener('click', ()=>{
   startApp(code);
 });
 document.getElementById('btn-change-code').addEventListener('click', ()=>{
-  confirmDialog('Wisselen van gezinscode logt dit apparaat uit bij het huidige gezin. Je kunt daarna de (nieuwe of oude) code opnieuw invoeren. Doorgaan?', ()=>{
+  confirmDialog('Dit logt dit apparaat uit bij het huidige gezin. Je kunt daarna dezelfde of een andere gezinscode opnieuw invoeren. Doorgaan?', ()=>{
     localStorage.removeItem('gezinsagenda-hh-code');
     closeModal();
     location.reload();
