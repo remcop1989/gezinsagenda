@@ -245,6 +245,7 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 .kid-empty-actions{margin-top:14px;}
 
 /* ---------- Lists ---------- */
+.lists-toolbar{display:flex; justify-content:flex-end; margin-bottom:12px;}
 .lists-wrap{display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap;}
 .lists-nav{width:220px; flex:0 0 220px; display:flex; flex-direction:column; gap:6px;}
 .list-nav-btn{
@@ -363,5 +364,6 @@ input,select,textarea{font-family:inherit; font-size:14px;}
   .row2,.row3{grid-template-columns:1fr;}
   .range-label{min-width:0;}
   .lists-nav{width:100%; flex-direction:row; overflow-x:auto;}
+  .lists-toolbar .btn{width:100%; justify-content:center;}
   .kid-nav .lbl{min-width:0; font-size:16px;}
 }

@@ -1287,11 +1287,10 @@ function renderLists(){
   const kindIcon = k => k==='boodschappen' ? '🛒' : (k==='rekeningen' ? '💶' : '📋');
   nav.innerHTML = state.lists.map(l=>`
     <button class="list-nav-btn ${l.id===activeListId?'active':''}" data-lid="${l.id}">${kindIcon(l.kind)} ${escapeHtml(l.name)}</button>
-  `).join('') + `<button class="btn btn-primary btn-sm" id="btn-new-list" style="margin-top:8px;">+ Nieuwe lijst</button>`;
+  `).join('');
   nav.querySelectorAll('.list-nav-btn').forEach(b=>{
     b.addEventListener('click', ()=>{ activeListId = b.dataset.lid; renderLists(); });
   });
-  document.getElementById('btn-new-list').addEventListener('click', openNewListModal);
 
   const main = document.getElementById('list-main');
   const list = listById(activeListId);
@@ -1390,6 +1389,8 @@ function openNewListModal(){
   });
   openModal();
 }
+
+document.getElementById('btn-new-list').addEventListener('click', openNewListModal);
 
 /* =========================================================
    INSTELLINGEN: gezinsleden + export/import
