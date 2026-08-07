@@ -546,6 +546,9 @@ function renderMonthGrid(){
       daycellsHtml += `<div class="month-daycell ${inMonth?'':'other-month'} ${isToday?'today':''}" style="grid-column:${c+1};" data-date="${fmtISODate(day)}">
         <span>${day.getDate()}</span><span class="add">+</span>
       </div>`;
+      if(isToday){
+        daycellsHtml += `<div class="month-today-frame" style="grid-column:${c+1}; grid-row:1 / -1;"></div>`;
+      }
       if(hiddenCountByCol[c]>0){
         daycellsHtml += `<div class="month-overflow" style="grid-column:${c+1}; grid-row:${maxLanes+2};" data-date="${fmtISODate(day)}">+${hiddenCountByCol[c]}</div>`;
       }
@@ -647,8 +650,8 @@ function renderTimeGrid(startDate, numDays){
       if(dayAllDay.length>maxShow) pillsHtml += `<div class="pill-more">+${dayAllDay.length-maxShow}</div>`;
       alldayRow = `<div class="time-col-allday">${pillsHtml}</div>`;
     }
-    cols += `<div class="time-col">
-      <div class="time-col-header ${isToday?'today':''}">
+    cols += `<div class="time-col ${isToday?'today':''}">
+      <div class="time-col-header">
         <span class="dow">${DOW_SHORT[day.getDay()]}</span><span class="dnum">${day.getDate()}</span>
       </div>
       ${alldayRow}

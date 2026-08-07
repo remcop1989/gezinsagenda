@@ -118,7 +118,8 @@ input,select,textarea{font-family:inherit; font-size:14px;}
   min-height:16px;
 }
 .month-daycell.other-month{opacity:.35;}
-.month-daycell.today{background:var(--accent-2); color:#fff;}
+.month-daycell.today{}
+.month-today-frame{border:2px solid var(--accent-2); border-radius:8px; pointer-events:none;}
 .month-daycell .add{opacity:0; font-size:12px; line-height:1;}
 .month-daycell:hover .add{opacity:.8;}
 .month-bar{
@@ -151,7 +152,7 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 }
 .time-col-header .dow{font-family:var(--font-mono); font-size:10.5px; text-transform:uppercase; color:var(--ink-soft); letter-spacing:.06em;}
 .time-col-header .dnum{font-family:var(--font-display); font-weight:700; font-size:17px;}
-.time-col-header.today .dnum{color:var(--accent-2);}
+.time-col.today{border:2px solid var(--accent-2); border-radius:10px;}
 .time-body{position:relative;}
 .hour-row{height:var(--hour-px, 52px); border-bottom:1px solid var(--paper-sunk); position:relative;}
 .hour-row:last-child{border-bottom:none;}
