@@ -532,16 +532,16 @@ input,select,textarea{font-family:inherit; font-size:14px;}
       window.fbSync._eventsCol = eventsCol;
       window.fbSync._listsCol = listsCol;
 
-      onSnapshot(metaRef, (snap)=>{
+      onSnapshot(metaRef, { includeMetadataChanges: true }, (snap)=>{
         const data = snap.exists() ? snap.data() : null;
         callbacks.onMembers(data && data.familyMembers ? data.familyMembers : null, snap.metadata.fromCache);
       }, (err)=> callbacks.onError && callbacks.onError('gezinsleden', err));
 
-      onSnapshot(eventsCol, (snap)=>{
+      onSnapshot(eventsCol, { includeMetadataChanges: true }, (snap)=>{
         callbacks.onEvents(snap.docs.map(d=>d.data()), snap.metadata.fromCache);
       }, (err)=> callbacks.onError && callbacks.onError('afspraken', err));
 
-      onSnapshot(listsCol, (snap)=>{
+      onSnapshot(listsCol, { includeMetadataChanges: true }, (snap)=>{
         callbacks.onLists(snap.docs.map(d=>d.data()), snap.metadata.fromCache);
       }, (err)=> callbacks.onError && callbacks.onError('lijstjes', err));
     },
