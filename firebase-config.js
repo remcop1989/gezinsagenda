@@ -11,3 +11,7 @@ export const firebaseConfig = {
   messagingSenderId: "1046702850633",
   appId: "1:1046702850633:web:be10208e827aab94db3598"
 };
+
+// App Check (reCAPTCHA v3) — dit is de PUBLIEKE site key, geen geheim.
+// De bijbehorende secret key staat alleen in de Firebase Console (App Check-sectie), nooit hier.
+export const recaptchaSiteKey = "6Lf8nnktAAAAAMFlDwomFWjvJl6qAOhBh4JJyCj7";

@@ -6,11 +6,20 @@ import {
   doc, setDoc, deleteDoc, onSnapshot, collection, getDocs
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-import { firebaseConfig } from "./firebase-config.js";
+import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app-check.js";
+import { firebaseConfig, recaptchaSiteKey } from "./firebase-config.js";
 
 let db, auth;
 try{
   const app = initializeApp(firebaseConfig);
+
+  // App Check: bevestigt aan Firebase dat requests echt van deze site komen
+  // (voorkomt dat iemand anders met de gekopieerde config je quotum opsoupeert).
+  initializeAppCheck(app, {
+    provider: new ReCaptchaV3Provider(recaptchaSiteKey),
+    isTokenAutoRefreshEnabled: true
+  });
+
   db = initializeFirestore(app, {
     localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
     experimentalAutoDetectLongPolling: true
