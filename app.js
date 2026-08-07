@@ -1281,10 +1281,16 @@ function renderKid(){
 /* =========================================================
    LIJSTJES
    ========================================================= */
+// Oude lijst-types (uit een eerdere appversie) vallen terug op 'afvinken', zodat
+// bestaande lijstjes gewoon blijven werken zonder dataverlies.
+function normalizeListKind(k){
+  return (k==='afvinken' || k==='genummerd' || k==='opsomming') ? k : 'afvinken';
+}
+
 function renderLists(){
   if(!activeListId && state.lists.length) activeListId = state.lists[0].id;
   const nav = document.getElementById('lists-nav');
-  const kindIcon = k => k==='boodschappen' ? '🛒' : (k==='rekeningen' ? '💶' : '📋');
+  const kindIcon = k => normalizeListKind(k)==='genummerd' ? '🔢' : (normalizeListKind(k)==='opsomming' ? '📋' : '✅');
   nav.innerHTML = state.lists.map(l=>`
     <button class="list-nav-btn ${l.id===activeListId?'active':''}" data-lid="${l.id}">${kindIcon(l.kind)} ${escapeHtml(l.name)}</button>
   `).join('');
@@ -1302,29 +1308,37 @@ function renderLists(){
     main.innerHTML = `<div class="empty-state"><span class="em">📋</span>Nog geen lijstjes. Maak er een aan!</div>`;
     return;
   }
-  const isBill = list.kind==='rekeningen';
-  const itemsHtml = list.items.map(it=>`
-    <div class="list-item ${it.done?'done':''}">
-      <input type="checkbox" data-iid="${it.id}" class="li-check" ${it.done?'checked':''}>
-      <span class="txt">${escapeHtml(it.text)}</span>
-      ${isBill && it.amount ? `<span class="meta">€ ${escapeHtml(it.amount)}</span>`:''}
-      ${isBill && it.due ? `<span class="meta">${escapeHtml(it.due)}</span>`:''}
-      <button class="btn btn-sm li-del" data-iid="${it.id}">✕</button>
-    </div>`).join('') || `<div class="hint" style="padding:16px 0;">Nog niets op deze lijst.</div>`;
+  const kind = normalizeListKind(list.kind);
+  const isCheck = kind==='afvinken';
+
+  const itemsHtml = list.items.map((it, idx)=>{
+    const marker = isCheck
+      ? `<input type="checkbox" data-iid="${it.id}" class="li-check" ${it.done?'checked':''}>`
+      : `<span class="li-marker">${kind==='genummerd' ? (idx+1)+'.' : '•'}</span>`;
+    return `
+    <div class="list-item ${isCheck && it.done?'done':''}">
+      ${marker}
+      <span class="txt" data-iid="${it.id}">${escapeHtml(it.text)}</span>
+      <div class="li-actions">
+        <button class="li-btn li-move-up" data-iid="${it.id}" title="Omhoog" ${idx===0?'disabled':''}>▲</button>
+        <button class="li-btn li-move-down" data-iid="${it.id}" title="Omlaag" ${idx===list.items.length-1?'disabled':''}>▼</button>
+        <button class="li-btn li-del" data-iid="${it.id}" title="Verwijderen">✕</button>
+      </div>
+    </div>`;
+  }).join('') || `<div class="hint" style="padding:16px 0;">Nog niets op deze lijst.</div>`;
 
   main.innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-      <h2 style="margin:0;">${escapeHtml(list.name)}</h2>
-      <div style="display:flex; gap:6px;">
-        <button class="btn btn-sm" id="btn-clear-done">Wis afgevinkte</button>
+    <div class="list-header">
+      <h2>${escapeHtml(list.name)}</h2>
+      <div class="list-actions">
+        ${isCheck ? `<button class="btn btn-sm" id="btn-clear-done">Wis afgevinkte</button>` : ''}
+        <button class="btn btn-sm" id="btn-clear-list">Lijst leegmaken</button>
         <button class="btn btn-sm btn-danger" id="btn-del-list">Lijst verwijderen</button>
       </div>
     </div>
     <div id="items-container">${itemsHtml}</div>
     <div class="add-item-row">
       <input type="text" id="new-item-text" placeholder="Nieuw item...">
-      ${isBill ? '<input type="text" id="new-item-amount" placeholder="€ bedrag" style="max-width:110px;">' : ''}
-      ${isBill ? '<input type="date" id="new-item-due" style="max-width:150px;">' : ''}
       <button class="btn btn-accent" id="btn-add-item">+ Toevoegen</button>
     </div>
   `;
@@ -1335,13 +1349,64 @@ function renderLists(){
       it.done = cb.checked; window.fbSync.syncList(list).catch(reportSyncError); renderLists();
     });
   });
+  // Tik op de tekst van een item om 'm te bewerken.
+  main.querySelectorAll('.txt').forEach(span=>{
+    span.addEventListener('click', ()=>{
+      const it = list.items.find(x=>x.id===span.dataset.iid);
+      if(!it) return;
+      const input = document.createElement('input');
+      input.type = 'text'; input.value = it.text; input.className = 'li-edit-input';
+      span.replaceWith(input);
+      input.focus(); input.select();
+      let settled = false;
+      const commit = ()=>{
+        if(settled) return; settled = true;
+        const val = input.value.trim();
+        if(val && val!==it.text){ it.text = val; window.fbSync.syncList(list).catch(reportSyncError); }
+        renderLists();
+      };
+      const cancel = ()=>{ if(settled) return; settled = true; renderLists(); };
+      input.addEventListener('blur', commit);
+      input.addEventListener('keydown', e=>{
+        if(e.key==='Enter'){ e.preventDefault(); commit(); }
+        else if(e.key==='Escape'){ e.preventDefault(); cancel(); }
+      });
+    });
+  });
+  main.querySelectorAll('.li-move-up').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const idx = list.items.findIndex(x=>x.id===b.dataset.iid);
+      if(idx>0){
+        [list.items[idx-1], list.items[idx]] = [list.items[idx], list.items[idx-1]];
+        window.fbSync.syncList(list).catch(reportSyncError); renderLists();
+      }
+    });
+  });
+  main.querySelectorAll('.li-move-down').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const idx = list.items.findIndex(x=>x.id===b.dataset.iid);
+      if(idx>-1 && idx<list.items.length-1){
+        [list.items[idx+1], list.items[idx]] = [list.items[idx], list.items[idx+1]];
+        window.fbSync.syncList(list).catch(reportSyncError); renderLists();
+      }
+    });
+  });
   main.querySelectorAll('.li-del').forEach(b=>{
     b.addEventListener('click', ()=>{
       list.items = list.items.filter(x=>x.id!==b.dataset.iid); window.fbSync.syncList(list).catch(reportSyncError); renderLists();
     });
   });
-  document.getElementById('btn-clear-done').addEventListener('click', ()=>{
-    list.items = list.items.filter(x=>!x.done); window.fbSync.syncList(list).catch(reportSyncError); renderLists();
+  if(isCheck){
+    document.getElementById('btn-clear-done').addEventListener('click', ()=>{
+      if(!list.items.some(x=>x.done)) return;
+      list.items = list.items.filter(x=>!x.done); window.fbSync.syncList(list).catch(reportSyncError); renderLists();
+    });
+  }
+  document.getElementById('btn-clear-list').addEventListener('click', ()=>{
+    if(!list.items.length) return;
+    confirmDialog('Alle items uit deze lijst verwijderen?', ()=>{
+      list.items = []; window.fbSync.syncList(list).catch(reportSyncError); renderLists();
+    });
   });
   document.getElementById('btn-del-list').addEventListener('click', ()=>{
     confirmDialog('Deze hele lijst verwijderen?', ()=>{
@@ -1353,12 +1418,7 @@ function renderLists(){
   function addItem(){
     const txt = document.getElementById('new-item-text').value.trim();
     if(!txt) return;
-    const item = {id:uid(), text:txt, done:false};
-    if(isBill){
-      item.amount = document.getElementById('new-item-amount').value.trim();
-      item.due = document.getElementById('new-item-due').value;
-    }
-    list.items.push(item);
+    list.items.push({id:uid(), text:txt, done:false});
     window.fbSync.syncList(list).catch(reportSyncError); renderLists();
   }
   document.getElementById('btn-add-item').addEventListener('click', addItem);
@@ -1371,9 +1431,9 @@ function openNewListModal(){
     <div class="field"><label>Naam</label><input type="text" id="nl-name" placeholder="Bijv. Verjaardagscadeaus"></div>
     <div class="field"><label>Type</label>
       <select id="nl-kind">
-        <option value="algemeen">Algemeen</option>
-        <option value="boodschappen">Boodschappen</option>
-        <option value="rekeningen">Te betalen rekeningen</option>
+        <option value="afvinken">Afvinklijst (met vinkjes)</option>
+        <option value="genummerd">Genummerde lijst (1, 2, 3…)</option>
+        <option value="opsomming">Opsomming (met bullets)</option>
       </select>
     </div>
     <div class="modal-actions"><div></div>
