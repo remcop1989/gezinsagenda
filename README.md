@@ -41,6 +41,13 @@ Een lichte, installeerbare webapp (PWA) waarmee een gezin samen één agenda, ki
 
 > ⚠️ `firebase-config.js` bevat projectgegevens die met de app worden meegestuurd naar de browser. Bescherm je data met goede Firestore security rules — niet door de config geheim te houden.
 
+#### Let op bij het schrijven van security rules
+`request.resource` (de binnenkomende data van een schrijfactie) is niet bij elke operatie beschikbaar. Dat heeft al twee keer voor een sluipende bug gezorgd, dus splits regels altijd expliciet op:
+- **Niet** `read` en `write` in één blok combineren — bij een `read` bestaat `request.resource` niet, dus elke voorwaarde die daarop steunt laat ook het lézen mislukken.
+- **Niet** `create`/`update` en `delete` onder één `allow write` zetten — bij een `delete` stuurt de client geen `request.resource.data` mee. Een voorwaarde als `request.resource.data.size() < 30` faalt dan altijd, waardoor verwijderen nooit lukt (en er zonder foutafhandeling in de app niets op wijst — de wijziging lijkt gewoon "vanzelf" terug te komen).
+
+Gebruik dus losse blokken: `allow read`, `allow create, update` (met de datavalidatie erin) en `allow delete` (zonder afhankelijkheid van `request.resource`).
+
 ### 2. Lokaal draaien
 Omdat de app JavaScript-modules (`type="module"`) gebruikt, moet je hem via een lokale webserver openen (niet direct als `file://`), bijvoorbeeld:
 
