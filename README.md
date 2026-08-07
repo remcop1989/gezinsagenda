@@ -27,6 +27,7 @@ Een lichte, installeerbare webapp (PWA) waarmee een gezin samen één agenda, ki
 ├── app.js                # Applicatielogica (UI, interacties, rendering)
 ├── firebase-config.js     # Firebase-projectconfiguratie (API-sleutels)
 ├── firebase-sync.js       # Synclaag tussen de app en Firestore
+├── firestore.rules.txt    # Firestore security rules (ter documentatie/versiebeheer — leidend is wat in de Firebase Console staat; .txt zodat het ook als Claude-projectkennis te uploaden is)
 └── sw.js                    # Service worker (offline-caching, meldingsclicks)
 ```
 
