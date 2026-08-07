@@ -1643,9 +1643,26 @@ function checkUpcomingNotifications(){
   if(changed) saveNotifiedSet(notified);
 }
 
-/* ---- Service worker: laat de app (en het laatst-gesyncte scherm) ook werken zonder internet ---- */
+/* ---- Service worker: laat de app (en het laatst-gesyncte scherm) ook werken zonder internet ----
+   Browsers checken sw.js standaard maar zo'n 1x per 24 uur op wijzigingen. Om te zorgen dat
+   updates (ook bij gezinsleden) vanzelf en snel doorkomen — zonder dat iemand handmatig
+   site-data moet wissen — forceren we hieronder zelf een verse check bij elke opening, en
+   herladen we de pagina automatisch zodra een nieuwe versie actief is geworden. */
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js').catch(err=> console.error('Service worker registratie mislukt', err));
+  const hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register('./sw.js').then(reg=>{
+    reg.update().catch(()=>{});
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.visibilityState === 'visible') reg.update().catch(()=>{});
+    });
+  }).catch(err=> console.error('Service worker registratie mislukt', err));
+
+  let swRefreshed = false;
+  navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+    if(!hadController || swRefreshed) return;
+    swRefreshed = true;
+    window.location.reload();
+  });
 }
 
 renderSettings();
