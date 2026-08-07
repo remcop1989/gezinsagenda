@@ -6,7 +6,7 @@ Een lichte, installeerbare webapp (PWA) waarmee een gezin samen één agenda, ki
 
 - **Agenda** — maand-, week- en dagweergave, afspraken toevoegen/bewerken, filteren per gezinslid
 - **Kindweergave** — vereenvoudigd overzicht per kind (week/dag)
-- **Lijstjes** — gedeelde to-do/boodschappenlijsten
+- **Lijstjes** — gedeelde lijstjes in 3 types (afvinklijst, genummerde lijst, opsomming); items zijn te bewerken, te herordenen (▲/▼) en te verwijderen, met een knop om een hele lijst in één keer leeg te maken
 - **Gezinsleden beheren** — leden toevoegen, iemand markeren als "kind"
 - **Meldingen** — lokale melding ~15 min voor een afspraak (geen achtergrond-push)
 - **Export/import** — back-up van alle gegevens als `.json`
