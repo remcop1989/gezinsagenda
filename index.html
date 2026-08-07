@@ -155,8 +155,8 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 
 
 /* ---------- Week / day grid ---------- */
-.time-grid-wrap{display:flex; align-items:flex-start; border:1px solid var(--line); border-radius:12px; background:var(--paper-raised); max-height:560px; overflow:auto; position:relative;}
-.time-gutter{width:56px; flex:0 0 56px; border-right:1px solid var(--line); position:sticky; left:0; z-index:6; background:var(--paper-raised);}
+.time-grid-wrap{display:flex; align-items:flex-start; border:1px solid var(--line); border-radius:12px; background:var(--paper-raised); max-height:560px; overflow:auto; -webkit-overflow-scrolling:touch; position:relative;}
+.time-gutter{width:56px; flex:0 0 56px; border-right:1px solid var(--line); position:sticky; left:0; z-index:6; background:var(--paper-raised); -webkit-transform:translateZ(0); transform:translateZ(0); backface-visibility:hidden; -webkit-backface-visibility:hidden;}
 .time-cols{flex:1; display:flex; align-items:flex-start; position:relative; min-width:max-content;}
 .time-col{flex:1 0 110px; min-width:110px; border-right:1px solid var(--line); position:relative;}
 .time-col:last-child{border-right:none;}
@@ -165,6 +165,7 @@ input,select,textarea{font-family:inherit; font-size:14px;}
   height:57px; box-sizing:border-box; padding:8px 4px;
   display:flex; flex-direction:column; align-items:center; justify-content:center;
   border-bottom:1px solid var(--line);
+  -webkit-transform:translateZ(0); transform:translateZ(0);
 }
 .time-col-header .dow{font-family:var(--font-mono); font-size:10.5px; text-transform:uppercase; color:var(--ink-soft); letter-spacing:.06em;}
 .time-col-header .dnum{font-family:var(--font-display); font-weight:700; font-size:17px;}
@@ -184,12 +185,13 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 .event-block .t{font-family:var(--font-mono); font-weight:600; font-size:10px; opacity:.9; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .event-block .loc{font-weight:500; opacity:.9; font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block;}
 .event-block .ttl{display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-.gutter-corner-spacer{position:sticky; top:0; z-index:8; background:var(--paper-raised);}
-.gutter-allday-spacer{height:26px; border-bottom:1px solid var(--line); position:sticky; top:57px; z-index:8; background:var(--paper-raised);}
+.gutter-corner-spacer{position:sticky; top:0; z-index:8; background:var(--paper-raised); -webkit-transform:translateZ(0); transform:translateZ(0);}
+.gutter-allday-spacer{height:26px; border-bottom:1px solid var(--line); position:sticky; top:57px; z-index:8; background:var(--paper-raised); -webkit-transform:translateZ(0); transform:translateZ(0);}
 .time-col-allday{
   position:sticky; top:57px; z-index:3; background:var(--paper-raised);
   height:26px; padding:2px 4px; border-bottom:1px solid var(--line);
   display:flex; align-items:center; gap:3px; overflow:hidden;
+  -webkit-transform:translateZ(0); transform:translateZ(0);
 }
 .time-col-allday .pill{max-width:100%;}
 
@@ -1148,15 +1150,10 @@ function renderTimeGrid(startDate, numDays){
     wrapMaxHeight = availableH;
   }
 
-  // In de dagweergave (1 dag) tonen we geen tijdlabel-kolom naast de dag.
-  const showGutter = numDays !== 1;
-  let gutter = '';
-  if(showGutter){
-    gutter = `<div class="time-gutter"><div class="gutter-corner-spacer" style="height:${headerH}px;"></div>`;
-    if(anyAllDay) gutter += '<div class="gutter-allday-spacer"></div>';
-    for(let h=HOUR_START; h<HOUR_END; h++){ gutter += `<div class="gutter-label">${pad2(h)}:00</div>`; }
-    gutter += '</div>';
-  }
+  let gutter = `<div class="time-gutter"><div class="gutter-corner-spacer" style="height:${headerH}px;"></div>`;
+  if(anyAllDay) gutter += '<div class="gutter-allday-spacer"></div>';
+  for(let h=HOUR_START; h<HOUR_END; h++){ gutter += `<div class="gutter-label">${pad2(h)}:00</div>`; }
+  gutter += '</div>';
 
   let cols = '';
   for(let d=0; d<numDays; d++){
