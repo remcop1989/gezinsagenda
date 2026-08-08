@@ -1728,6 +1728,32 @@ if('serviceWorker' in navigator){
   });
 }
 
+/* ---- Extra vangnet voor "app op beginscherm" (vooral iOS) ----
+   Zo'n geïnstalleerde app is bij het openen vaak een hervatte, bevroren sessie in plaats
+   van een verse paginalading. Daardoor wordt de normale service worker-updatecheck hierboven
+   soms niet (betrouwbaar) uitgevoerd, en blijft de oude versie draaien totdat de site ooit nog
+   eens gewoon in de browser wordt geopend. Als vangnet pollen we daarom zelf een piepklein
+   versiebestand (met cache:'no-store', dus altijd vers) en forceren we zelf een herlaad zodra
+   die afwijkt van de versie waarmee de app is gestart. Let op: version.txt moet bij elke
+   release worden bijgewerkt, net als de CACHE_NAME hierboven in sw.js. */
+let knownAppVersion = null;
+async function checkForAppUpdate(){
+  try{
+    const res = await fetch('./version.txt', { cache: 'no-store' });
+    if(!res.ok) return;
+    const v = (await res.text()).trim();
+    if(!v) return;
+    if(knownAppVersion === null){ knownAppVersion = v; return; }
+    if(v !== knownAppVersion) window.location.reload();
+  }catch(e){ /* offline of netwerkfout: gewoon negeren, geen actie ondernemen */ }
+}
+checkForAppUpdate();
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'visible') checkForAppUpdate();
+});
+window.addEventListener('pageshow', (e)=>{ if(e.persisted) checkForAppUpdate(); });
+window.addEventListener('focus', checkForAppUpdate);
+
 renderSettings();
 let resizeRefitTimer = null;
 function scheduleAgendaRefit(){
