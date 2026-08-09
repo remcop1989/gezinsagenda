@@ -225,6 +225,23 @@ function eventColor(ev){
   return '#3e7c7b';
 }
 
+/* Standaard starttijd voor een nieuwe afspraak: het eerstvolgende hele uur (bijv. 14:29 -> 15:00).
+   Staat het al op een heel uur, dan blijft dat uur staan. Na 23:00 wordt niet doorgerold naar de
+   volgende dag (zelfde cap-op-23 die ook al voor de eindtijd wordt gebruikt). */
+function nextFullHour(){
+  const now = new Date();
+  return now.getMinutes()===0 ? now.getHours() : Math.min(now.getHours()+1, 23);
+}
+
+/* Klein 🙈-badge voor in de week/dagweergave: signaleert dat een aangevinkt kind bij deze afspraak
+   via de 🙈-toggle is verborgen in de kindweergave, zonder dat je het formulier hoeft te openen. */
+function hiddenKidBadge(ev){
+  const ids = ev.hiddenFromKidView || [];
+  if(!ids.length) return '';
+  const names = ids.map(id=>{ const m=memberById(id); return m ? m.name : null; }).filter(Boolean).join(', ');
+  return `<span class="kid-hidden-badge" title="Niet in kindweergave voor: ${escapeHtml(names)}">🙈</span>`;
+}
+
 /* =========================================================
    TERUGKERENDE AFSPRAKEN: occurrences berekenen binnen een periode
    ========================================================= */
@@ -683,7 +700,7 @@ function renderTimeGrid(startDate, numDays){
       const widthPct = 100/o.totalCols;
       const leftPct = o.col*widthPct;
       blocks += `<div class="event-block" style="top:${top}px; height:${Math.max(height,16)}px; left:calc(${leftPct}% + 2px); width:calc(${widthPct}% - 4px); background:${c};" data-eid="${o.event.id}" data-occstart="${o.occStart.toISOString()}"
-        <span class="t">${fmtTimeHM(o.occStart)}–${fmtTimeHM(o.occEnd)} ${members}</span>
+        <span class="t">${fmtTimeHM(o.occStart)}–${fmtTimeHM(o.occEnd)} ${members}${hiddenKidBadge(o.event)}</span>
         <span class="ttl">${escapeHtml(o.event.title)}</span>
         ${o.event.location?`<span class="loc">📍 ${escapeHtml(o.event.location)}</span>`:''}
       </div>`;
@@ -701,7 +718,7 @@ function renderTimeGrid(startDate, numDays){
       const maxShow = 1;
       let pillsHtml = dayAllDay.slice(0,maxShow).map(o=>{
         const c = eventColor(o.event);
-        return `<div class="pill" style="background:${c}" data-eid="${o.event.id}" data-occstart="${o.occStart.toISOString()}" title="${escapeHtml(o.event.title)}">${o.event.icon||'📅'} ${escapeHtml(o.event.title)}</div>`;
+        return `<div class="pill" style="background:${c}" data-eid="${o.event.id}" data-occstart="${o.occStart.toISOString()}" title="${escapeHtml(o.event.title)}">${o.event.icon||'📅'} ${escapeHtml(o.event.title)}${hiddenKidBadge(o.event)}</div>`;
       }).join('');
       if(dayAllDay.length>maxShow) pillsHtml += `<div class="pill-more">+${dayAllDay.length-maxShow}</div>`;
       alldayRow = `<div class="time-col-allday">${pillsHtml}</div>`;
@@ -776,7 +793,11 @@ function autofitSingleLineText(selector, baseSizePx, minScale){
    PICTOGRAMMENKIEZER (herbruikbaar in afspraakformulier)
    ========================================================= */
 function renderPictoPicker(selectedIcon){
-  return PICTO_CATEGORIES.map(c=>`
+  const custom = (state.settings && state.settings.customPictos) || [];
+  const cats = custom.length
+    ? [{cat:'Eigen pictogrammen', items: custom.map(c=>[c.icon, c.label])}].concat(PICTO_CATEGORIES)
+    : PICTO_CATEGORIES;
+  return cats.map(c=>`
     <div class="picto-cat-label">${escapeHtml(c.cat)}</div>
     <div class="picto-grid">
       ${c.items.map(([em,label])=>`
@@ -826,7 +847,7 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
     endDate = fmtISODate(e); endTime = fmtTimeHM(e);
   } else {
     const d = prefill && prefill.date ? prefill.date : fmtISODate(new Date());
-    const h = prefill && typeof prefill.hour==='number' ? prefill.hour : 9;
+    const h = prefill && typeof prefill.hour==='number' ? prefill.hour : nextFullHour();
     startDate = d; startTime = pad2(h)+':00';
     endDate = d; endTime = pad2(Math.min(h+1,23))+':00';
   }
@@ -864,6 +885,15 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
       <div class="field"><label>Pictogram</label>
         <input type="text" id="ev-emoji-search" placeholder="Zoek een pictogram (bijv. 'zwem' of 'oma')...">
         <div class="picto-picker-box" id="ev-emoji-pick">${renderPictoPicker(data.icon)}</div><input type="hidden" id="f-icon" value="${data.icon}">
+        <div class="picto-custom-add">
+          <input type="text" id="ev-custom-icon" maxlength="4" placeholder="Eigen pictogram plakken (bijv. 🦖)">
+          <input type="text" id="ev-custom-label" placeholder="Naam (optioneel)">
+          <div class="picto-custom-actions">
+            <button type="button" class="btn btn-sm" id="btn-custom-once">Eenmalig gebruiken</button>
+            <button type="button" class="btn btn-sm" id="btn-custom-save">Bewaren &amp; gebruiken</button>
+          </div>
+          <div class="hint">Plak een pictogram vanaf je emoji-toetsenbord. "Eenmalig" gebruikt het alleen voor deze afspraak; "Bewaren" zet het ook bij je eigen pictogrammen hierboven, voor volgende keer.</div>
+        </div>
       </div>
       <div class="field"><label class="check-pill check-pill--inline"><input type="checkbox" id="f-allday" ${data.allDay?'checked':''}> Hele dag (geen specifieke tijd)</label></div>
       <div class="row2">
@@ -1005,6 +1035,34 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
       grid.classList.toggle('is-hidden', !anyVisible);
     });
   });
+
+  // Eigen pictogram: "Eenmalig gebruiken" past alleen dit formulier aan (niets wordt bewaard).
+  // "Bewaren & gebruiken" zet het pictogram ook in state.settings.customPictos, zodat het
+  // voortaan gewoon als extra categorie bovenaan de kiezer verschijnt (zie renderPictoPicker).
+  function useCustomIcon(persist){
+    const iconInput = document.getElementById('ev-custom-icon');
+    const labelInput = document.getElementById('ev-custom-label');
+    const icon = iconInput.value.trim();
+    if(!icon){ iconInput.focus(); return; }
+    const label = labelInput.value.trim() || icon;
+    if(persist){
+      const list = ((state.settings && state.settings.customPictos) || []).slice();
+      if(!list.some(c=>c.icon===icon)) list.push({icon, label});
+      state.settings = Object.assign({}, state.settings, {customPictos:list});
+      window.fbSync.syncSettings(state.settings).catch(reportSyncError);
+      document.getElementById('ev-emoji-pick').innerHTML = renderPictoPicker(icon);
+    } else {
+      document.querySelectorAll('#ev-emoji-pick .picto-btn').forEach(x=>x.classList.remove('sel'));
+    }
+    document.getElementById('f-icon').value = icon;
+    const titleInput = document.getElementById('f-title');
+    const kindInput = document.getElementById('f-kindtekst');
+    if(!titleInput.value.trim()) titleInput.value = label;
+    if(!kindInput.value.trim()) kindInput.value = label;
+    iconInput.value = ''; labelInput.value = '';
+  }
+  document.getElementById('btn-custom-once').addEventListener('click', ()=> useCustomIcon(false));
+  document.getElementById('btn-custom-save').addEventListener('click', ()=> useCustomIcon(true));
 
   const alldaySel = document.getElementById('f-allday');
   alldaySel.addEventListener('change', ()=>{
@@ -1380,7 +1438,7 @@ document.getElementById('kid-today').addEventListener('click', ()=>{ kidDate = n
 document.getElementById('btn-kid-add').addEventListener('click', ()=>{
   if(!kidId){ showToast('Voeg eerst een gezinslid toe bij Instellingen'); return; }
   const d = kidView==='day' ? fmtISODate(kidDate) : fmtISODate(getMonday(kidDate));
-  openEventModal(null, {date:d, hour:9, participants:[kidId]});
+  openEventModal(null, {date:d, hour:nextFullHour(), participants:[kidId]});
 });
 function stepKid(dir){
   kidDate = kidView==='week' ? addDays(kidDate,7*dir) : addDays(kidDate,dir);
@@ -1459,7 +1517,7 @@ function renderKid(){
     body.innerHTML = `<div class="train">${wagons}</div>`;
     autofitSingleLineText('.picto-row .txt', 16, 0.38);
     body.querySelectorAll('.wagon-add').forEach(b=>{
-      b.addEventListener('click', ()=> openEventModal(null, {date:b.dataset.date, hour:9, participants:[kidId]}));
+      b.addEventListener('click', ()=> openEventModal(null, {date:b.dataset.date, hour:nextFullHour(), participants:[kidId]}));
     });
     body.querySelectorAll('.picto-row').forEach(r=>{
       r.addEventListener('click', ()=> openEventModal(eventById(r.dataset.eid), null, {occStart:new Date(r.dataset.occstart)}));
@@ -1476,7 +1534,7 @@ function renderKid(){
         <div class="kid-empty-actions"><button class="btn btn-accent" id="kid-empty-add">+ Iets toevoegen</button></div>
       </div>`;
       document.getElementById('kid-empty-add').addEventListener('click', ()=>{
-        openEventModal(null, {date:fmtISODate(kidDate), hour:9, participants:[kidId]});
+        openEventModal(null, {date:fmtISODate(kidDate), hour:nextFullHour(), participants:[kidId]});
       });
       return;
     }
