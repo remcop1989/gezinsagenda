@@ -778,21 +778,21 @@ function openEventModal(ev, prefill){
     <form id="event-form">
       <div class="field"><label>Titel</label><input type="text" id="f-title" required value="${escapeHtml(data.title)}" placeholder="Bijv. Tandarts Sanne"></div>
       <div class="field"><label>Korte tekst voor kindweergave (optioneel)</label><input type="text" id="f-kindtekst" value="${escapeHtml(data.kindTekst||'')}" placeholder="Bijv. Tandarts"></div>
-      <div class="field"><label class="check-pill" style="display:inline-flex;"><input type="checkbox" id="f-only-dayview" ${data.onlyDayView?'checked':''}> Alleen tonen in dagweergave (kindweergave)</label>
+      <div class="field"><label class="check-pill check-pill--inline"><input type="checkbox" id="f-only-dayview" ${data.onlyDayView?'checked':''}> Alleen tonen in dagweergave (kindweergave)</label>
         <div class="hint">Staat dit uit, dan zie je het pictogram bij het kind zowel in de week- als de dagweergave. Vink aan om het alleen op de dag zelf te tonen.</div>
       </div>
       <div class="field"><label>Pictogram</label>
-        <input type="text" id="ev-emoji-search" placeholder="Zoek een pictogram (bijv. 'zwem' of 'oma')..." style="margin-bottom:6px;">
+        <input type="text" id="ev-emoji-search" placeholder="Zoek een pictogram (bijv. 'zwem' of 'oma')...">
         <div class="picto-picker-box" id="ev-emoji-pick">${renderPictoPicker(data.icon)}</div><input type="hidden" id="f-icon" value="${data.icon}">
       </div>
-      <div class="field"><label class="check-pill" style="display:inline-flex;"><input type="checkbox" id="f-allday" ${data.allDay?'checked':''}> Hele dag (geen specifieke tijd)</label></div>
+      <div class="field"><label class="check-pill check-pill--inline"><input type="checkbox" id="f-allday" ${data.allDay?'checked':''}> Hele dag (geen specifieke tijd)</label></div>
       <div class="row2">
         <div class="field"><label>Van datum</label><input type="date" id="f-start-date" required value="${startDate}"></div>
-        <div class="field" id="f-start-time-wrap" style="display:${data.allDay?'none':'block'};"><label>Van tijd</label><input type="time" id="f-start-time" ${data.allDay?'':'required'} value="${startTime}"></div>
+        <div class="field ${data.allDay?'is-hidden':''}" id="f-start-time-wrap"><label>Van tijd</label><input type="time" id="f-start-time" ${data.allDay?'':'required'} value="${startTime}"></div>
       </div>
       <div class="row2">
         <div class="field"><label>Tot datum</label><input type="date" id="f-end-date" required value="${endDate}"></div>
-        <div class="field" id="f-end-time-wrap" style="display:${data.allDay?'none':'block'};"><label>Tot tijd</label><input type="time" id="f-end-time" ${data.allDay?'':'required'} value="${endTime}"></div>
+        <div class="field ${data.allDay?'is-hidden':''}" id="f-end-time-wrap"><label>Tot tijd</label><input type="time" id="f-end-time" ${data.allDay?'':'required'} value="${endTime}"></div>
       </div>
       <div class="field"><label>Locatie</label><input type="text" id="f-location" value="${escapeHtml(data.location)}" placeholder="Bijv. Sportschool"></div>
       <div class="field"><label>Notities</label><textarea id="f-notes" placeholder="Extra informatie...">${escapeHtml(data.notes)}</textarea></div>
@@ -809,7 +809,7 @@ function openEventModal(ev, prefill){
           <option value="yearly" ${rec.freq==='yearly'?'selected':''}>Jaarlijks</option>
         </select>
       </div>
-      <div id="rec-extra" style="display:${rec.freq!=='none'?'block':'none'};">
+      <div id="rec-extra" class="${rec.freq==='none'?'is-hidden':''}">
         <div class="row2">
           <div class="field"><label id="rec-interval-label">${recIntervalLabel(rec.freq)}</label><input type="number" min="1" id="f-rec-interval" value="${rec.interval||1}"></div>
           <div class="field"><label>Eindigt</label>
@@ -821,24 +821,24 @@ function openEventModal(ev, prefill){
           </div>
         </div>
 
-        <div class="field" id="rec-weekly-wrap" style="display:${rec.freq==='weekly'?'block':'none'};">
+        <div class="field ${rec.freq!=='weekly'?'is-hidden':''}" id="rec-weekly-wrap">
           <label>Op welke dag(en) van de week</label>
           <div class="check-grid">
             ${WEEKDAY_OPTS.map(([val,lbl])=>`<label class="check-pill"><input type="checkbox" class="rec-weekday-cb" value="${val}" ${weeklyDaysSel.includes(val)?'checked':''}> ${lbl}</label>`).join('')}
           </div>
         </div>
 
-        <div id="rec-monthly-wrap" style="display:${rec.freq==='monthly'?'block':'none'};">
+        <div id="rec-monthly-wrap" class="${rec.freq!=='monthly'?'is-hidden':''}">
           <div class="field"><label>Op welke dag van de maand</label>
             <select id="f-rec-monthly-mode">
               <option value="dayOfMonth" ${monthlyMode==='dayOfMonth'?'selected':''}>Vaste dag van de maand (nummer)</option>
               <option value="weekdayOfMonth" ${monthlyMode==='weekdayOfMonth'?'selected':''}>Weekdag van de maand (bijv. eerste maandag)</option>
             </select>
           </div>
-          <div class="row2" id="rec-monthly-day-wrap" style="display:${monthlyMode==='dayOfMonth'?'grid':'none'};">
+          <div class="row2 ${monthlyMode!=='dayOfMonth'?'is-hidden':''}" id="rec-monthly-day-wrap">
             <div class="field"><label>Dag van de maand</label><input type="number" min="1" max="31" id="f-rec-monthly-day" value="${monthlyDayVal}"></div>
           </div>
-          <div class="row2" id="rec-monthly-weekday-wrap" style="display:${monthlyMode==='weekdayOfMonth'?'grid':'none'};">
+          <div class="row2 ${monthlyMode!=='weekdayOfMonth'?'is-hidden':''}" id="rec-monthly-weekday-wrap">
             <div class="field"><label>Welke</label><select id="f-rec-monthly-position">
               <option value="1" ${monthlyPositionVal===1?'selected':''}>Eerste</option>
               <option value="2" ${monthlyPositionVal===2?'selected':''}>Tweede</option>
@@ -853,8 +853,8 @@ function openEventModal(ev, prefill){
         </div>
 
         <div class="row2">
-          <div class="field" id="rec-enddate-wrap" style="display:${rec.endType==='onDate'?'block':'none'};"><label>Einddatum</label><input type="date" id="f-rec-enddate" value="${rec.endDate||''}"></div>
-          <div class="field" id="rec-count-wrap" style="display:${rec.endType==='after'?'block':'none'};"><label>Aantal keer</label><input type="number" min="1" id="f-rec-count" value="${rec.count||5}"></div>
+          <div class="field ${rec.endType!=='onDate'?'is-hidden':''}" id="rec-enddate-wrap"><label>Einddatum</label><input type="date" id="f-rec-enddate" value="${rec.endDate||''}"></div>
+          <div class="field ${rec.endType!=='after'?'is-hidden':''}" id="rec-count-wrap"><label>Aantal keer</label><input type="number" min="1" id="f-rec-count" value="${rec.count||5}"></div>
         </div>
       </div>
 
@@ -866,7 +866,7 @@ function openEventModal(ev, prefill){
 
       <div class="modal-actions">
         <div>${isEdit?'<button type="button" class="btn btn-danger" id="btn-delete-event">Verwijderen</button>':''}</div>
-        <div style="display:flex; gap:8px;">
+        <div class="modal-actions-buttons">
           <button type="button" class="btn" id="btn-cancel-modal">Annuleren</button>
           <button type="submit" class="btn btn-primary">Opslaan</button>
         </div>
@@ -916,19 +916,19 @@ function openEventModal(ev, prefill){
       let anyVisible = false;
       grid.querySelectorAll('.picto-btn').forEach(btn=>{
         const match = !q || btn.dataset.label.toLowerCase().includes(q);
-        btn.style.display = match ? 'flex' : 'none';
+        btn.classList.toggle('is-hidden', !match);
         if(match) anyVisible = true;
       });
-      catLabel.style.display = anyVisible ? 'block' : 'none';
-      grid.style.display = anyVisible ? 'flex' : 'none';
+      catLabel.classList.toggle('is-hidden', !anyVisible);
+      grid.classList.toggle('is-hidden', !anyVisible);
     });
   });
 
   const alldaySel = document.getElementById('f-allday');
   alldaySel.addEventListener('change', ()=>{
     const on = alldaySel.checked;
-    document.getElementById('f-start-time-wrap').style.display = on ? 'none' : 'block';
-    document.getElementById('f-end-time-wrap').style.display = on ? 'none' : 'block';
+    document.getElementById('f-start-time-wrap').classList.toggle('is-hidden', on);
+    document.getElementById('f-end-time-wrap').classList.toggle('is-hidden', on);
     document.getElementById('f-start-time').required = !on;
     document.getElementById('f-end-time').required = !on;
   });
@@ -978,23 +978,23 @@ function openEventModal(ev, prefill){
   const freqSel = document.getElementById('f-rec-freq');
   function updateRecVisibility(){
     const v = freqSel.value;
-    document.getElementById('rec-extra').style.display = v==='none' ? 'none':'block';
-    document.getElementById('rec-weekly-wrap').style.display = v==='weekly' ? 'block':'none';
-    document.getElementById('rec-monthly-wrap').style.display = v==='monthly' ? 'block':'none';
+    document.getElementById('rec-extra').classList.toggle('is-hidden', v==='none');
+    document.getElementById('rec-weekly-wrap').classList.toggle('is-hidden', v!=='weekly');
+    document.getElementById('rec-monthly-wrap').classList.toggle('is-hidden', v!=='monthly');
     document.getElementById('rec-interval-label').textContent = recIntervalLabel(v);
   }
   freqSel.addEventListener('change', updateRecVisibility);
   const monthlyModeSel = document.getElementById('f-rec-monthly-mode');
   function updateMonthlyModeVisibility(){
     const v = monthlyModeSel.value;
-    document.getElementById('rec-monthly-day-wrap').style.display = v==='dayOfMonth' ? 'grid':'none';
-    document.getElementById('rec-monthly-weekday-wrap').style.display = v==='weekdayOfMonth' ? 'grid':'none';
+    document.getElementById('rec-monthly-day-wrap').classList.toggle('is-hidden', v!=='dayOfMonth');
+    document.getElementById('rec-monthly-weekday-wrap').classList.toggle('is-hidden', v!=='weekdayOfMonth');
   }
   monthlyModeSel.addEventListener('change', updateMonthlyModeVisibility);
   const endTypeSel = document.getElementById('f-rec-endtype');
   endTypeSel.addEventListener('change', ()=>{
-    document.getElementById('rec-enddate-wrap').style.display = endTypeSel.value==='onDate' ? 'block':'none';
-    document.getElementById('rec-count-wrap').style.display = endTypeSel.value==='after' ? 'block':'none';
+    document.getElementById('rec-enddate-wrap').classList.toggle('is-hidden', endTypeSel.value!=='onDate');
+    document.getElementById('rec-count-wrap').classList.toggle('is-hidden', endTypeSel.value!=='after');
   });
 
   document.getElementById('btn-cancel-modal').addEventListener('click', closeModal);
@@ -1084,7 +1084,7 @@ function confirmDialog(msg, onYes){
     <div class="modal-head"><h2>Weet je het zeker?</h2></div>
     <p>${escapeHtml(msg)}</p>
     <div class="modal-actions"><div></div>
-      <div style="display:flex; gap:8px;">
+      <div class="modal-actions-buttons">
         <button class="btn" id="cd-no">Annuleren</button>
         <button class="btn btn-danger" id="cd-yes">Ja, verwijderen</button>
       </div>
@@ -1165,7 +1165,7 @@ function renderKid(){
     return;
   }
   const m = memberById(kidId);
-  document.getElementById('btn-kid-add').style.background = m.color;
+  document.getElementById('btn-kid-add').style.setProperty('--member-color', m.color);
 
   if(kidView==='week'){
     const mon = getMonday(kidDate);
@@ -1437,7 +1437,7 @@ function openNewListModal(){
       </select>
     </div>
     <div class="modal-actions"><div></div>
-      <div style="display:flex; gap:8px;">
+      <div class="modal-actions-buttons">
         <button class="btn" id="nl-cancel">Annuleren</button>
         <button class="btn btn-primary" id="nl-save">Aanmaken</button>
       </div>
@@ -1507,7 +1507,7 @@ function openMemberModal(existing){
       ${MEMBER_EMOJIS.map(em=>`<button type="button" class="${em===data.icon?'sel':''}" data-em="${em}">${em}</button>`).join('')}
     </div></div>
     <div class="modal-actions"><div></div>
-      <div style="display:flex; gap:8px;">
+      <div class="modal-actions-buttons">
         <button class="btn" id="mm-cancel">Annuleren</button>
         <button class="btn btn-primary" id="mm-save">Opslaan</button>
       </div>
@@ -1648,8 +1648,8 @@ if(savedCode){
 document.getElementById('hh-code-submit').addEventListener('click', ()=>{
   const code = document.getElementById('hh-code-input').value.trim();
   const errEl = document.getElementById('hh-gate-error');
-  if(!code){ errEl.textContent = 'Vul een gezinscode in.'; errEl.style.display = 'block'; return; }
-  errEl.style.display = 'none';
+  if(!code){ errEl.textContent = 'Vul een gezinscode in.'; errEl.classList.remove('is-hidden'); return; }
+  errEl.classList.add('is-hidden');
   localStorage.setItem('gezinsagenda-hh-code', code);
   startApp(code);
 });

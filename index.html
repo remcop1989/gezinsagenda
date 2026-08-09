@@ -45,7 +45,7 @@
       <div class="spacer"></div>
       <button class="btn btn-accent" id="btn-new-event">+ Afspraak</button>
     </div>
-    <div class="member-filters" id="agenda-member-filters" style="margin-bottom:8px;"></div>
+    <div class="member-filters" id="agenda-member-filters"></div>
     <div id="agenda-body"></div>
   </section>
 
@@ -85,27 +85,27 @@
 
   <!-- INSTELLINGEN -->
   <section class="panel" id="panel-instellingen">
-    <div class="card" style="margin-bottom:18px;">
-      <h2 style="margin-top:0;">Gezinsleden</h2>
-      <p class="hint" style="margin-top:0;">Zet iemand op "kind" om diegene te laten kiezen bij Kindweergave.</p>
+    <div class="card">
+      <h2>Gezinsleden</h2>
+      <p class="hint">Zet iemand op "kind" om diegene te laten kiezen bij Kindweergave.</p>
       <div id="members-list"></div>
-      <button class="btn btn-primary" style="margin-top:12px;" id="btn-add-member">+ Gezinslid toevoegen</button>
-    </div>
-    <div class="card" style="margin-bottom:18px;">
-      <h2 style="margin-top:0;">Meldingen</h2>
-      <p class="hint" style="margin-top:0;">Als dit aanstaat, krijg je op dit apparaat een melding zo'n 15 minuten voor een afspraak begint — maar alleen als de app hier onlangs open is geweest. Dit is geen gegarandeerde achtergrond-pushmelding.</p>
-      <button class="btn" id="btn-enable-notifications">🔔 Meldingen inschakelen op dit apparaat</button>
-      <span class="hint" id="notif-status" style="display:block; margin-top:8px;"></span>
+      <button class="btn btn-primary" id="btn-add-member">+ Gezinslid toevoegen</button>
     </div>
     <div class="card">
-      <h2 style="margin-top:0;">Gezinscode & back-up</h2>
-      <p class="hint" style="margin-top:0;">Alle gegevens worden gesynchroniseerd via jullie gezinscode — elk apparaat met dezelfde code ziet dezelfde agenda. Gebruik export/import als extra back-up of om iets terug te zetten.</p>
-      <p class="hint" style="margin-top:0;">Jullie huidige gezinscode: <strong id="current-hh-code">—</strong> <span class="hint">(is iemand die vergeten? Kijk hier op een apparaat dat nog wel is ingelogd en deel 'm opnieuw.)</span></p>
-      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <h2>Meldingen</h2>
+      <p class="hint">Als dit aanstaat, krijg je op dit apparaat een melding zo'n 15 minuten voor een afspraak begint — maar alleen als de app hier onlangs open is geweest. Dit is geen gegarandeerde achtergrond-pushmelding.</p>
+      <button class="btn" id="btn-enable-notifications">🔔 Meldingen inschakelen op dit apparaat</button>
+      <span class="hint" id="notif-status"></span>
+    </div>
+    <div class="card">
+      <h2>Gezinscode & back-up</h2>
+      <p class="hint">Alle gegevens worden gesynchroniseerd via jullie gezinscode — elk apparaat met dezelfde code ziet dezelfde agenda. Gebruik export/import als extra back-up of om iets terug te zetten.</p>
+      <p class="hint">Jullie huidige gezinscode: <strong id="current-hh-code">—</strong> <span class="hint">(is iemand die vergeten? Kijk hier op een apparaat dat nog wel is ingelogd en deel 'm opnieuw.)</span></p>
+      <div class="btn-row">
         <button class="btn" id="btn-export">⬇ Exporteer gegevens (.json)</button>
         <button class="btn" id="btn-import">⬆ Importeer gegevens</button>
         <button class="btn btn-danger" id="btn-change-code">Uitloggen</button>
-        <input type="file" id="import-file" accept="application/json" style="display:none;">
+        <input type="file" id="import-file" accept="application/json" class="is-hidden">
       </div>
     </div>
   </section>
@@ -126,8 +126,8 @@
     <p class="hint">Nog geen code? Verzin er gewoon zelf een (mag alles zijn) — die wordt automatisch jullie eigen, aparte agenda.</p>
     <p class="hint">Code vergeten? Vraag 'm bij een gezinslid dat nog is ingelogd (staat bij hen onder Instellingen).</p>
     <input type="text" id="hh-code-input" placeholder="Jullie gezinscode">
-    <div class="hh-gate-error" id="hh-gate-error"></div>
-    <button class="btn btn-primary" id="hh-code-submit" style="width:100%; justify-content:center;">Doorgaan</button>
+    <div class="hh-gate-error is-hidden" id="hh-gate-error"></div>
+    <button class="btn btn-primary" id="hh-code-submit">Doorgaan</button>
     <p class="hint">Deze code werkt als een wachtwoord: bewaar 'm samen ergens veilig en deel 'm alleen met elkaar.</p>
   </div>
 </div>
