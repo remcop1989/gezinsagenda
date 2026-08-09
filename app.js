@@ -225,10 +225,18 @@ function eventColor(ev){
   return '#3e7c7b';
 }
 
-/* Standaard starttijd voor een nieuwe afspraak: het eerstvolgende hele uur (bijv. 14:29 -> 15:00).
-   Staat het al op een heel uur, dan blijft dat uur staan. Na 23:00 wordt niet doorgerold naar de
-   volgende dag (zelfde cap-op-23 die ook al voor de eindtijd wordt gebruikt). */
-function nextFullHour(){
+/* Standaard starttijd voor een nieuwe afspraak: het eerstvolgende hele uur (bijv. 14:29 -> 15:00),
+   inclusief doorloop naar de volgende dag als het al na 23:00 is (23:40 vandaag -> 00:00 morgen). */
+function nextFullHourMoment(){
+  const now = new Date();
+  if(now.getMinutes()===0 && now.getSeconds()===0) return now;
+  const d = new Date(now);
+  d.setHours(d.getHours()+1, 0, 0, 0);
+  return d;
+}
+/* Variant zonder datumdoorloop: gebruikt wanneer de datum al vaststaat (bijv. een specifieke dag
+   aangeklikt in de kindweergave) en dus niet mag verschuiven naar een andere dag. */
+function nextFullHourCapped(){
   const now = new Date();
   return now.getMinutes()===0 ? now.getHours() : Math.min(now.getHours()+1, 23);
 }
@@ -846,10 +854,25 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
     startDate = fmtISODate(s); startTime = fmtTimeHM(s);
     endDate = fmtISODate(e); endTime = fmtTimeHM(e);
   } else {
-    const d = prefill && prefill.date ? prefill.date : fmtISODate(new Date());
-    const h = prefill && typeof prefill.hour==='number' ? prefill.hour : nextFullHour();
+    let d, h;
+    if(prefill && typeof prefill.hour==='number'){
+      // Expliciet aangeklikt tijdstip (bijv. een uurvak in de agenda) — datum en uur staan al vast.
+      d = prefill.date; h = prefill.hour;
+    } else if(prefill && prefill.date){
+      // Datum staat al vast (bijv. "+"-knop op een specifieke dag in de kindweergave); alleen het
+      // uur krijgt een standaardwaarde, zonder naar een andere dag door te rollen.
+      d = prefill.date; h = nextFullHourCapped();
+    } else {
+      // Geen enkele voorkeur meegegeven (hoofdknop "nieuwe afspraak") — neem het eerstvolgende
+      // hele uur vanaf nu, inclusief eventuele doorloop naar de volgende dag.
+      const moment = nextFullHourMoment();
+      d = fmtISODate(moment); h = moment.getHours();
+    }
     startDate = d; startTime = pad2(h)+':00';
-    endDate = d; endTime = pad2(Math.min(h+1,23))+':00';
+    // Eindtijd = start + 1 uur, met een echte datum-doorloop via combineDateTime (i.p.v. de oude
+    // cap-op-23, die een 23:00-afspraak per ongeluk een duur van 0 gaf i.p.v. door te lopen naar 00:00).
+    const endMoment = new Date(combineDateTime(d, pad2(h)+':00').getTime() + 60*60000);
+    endDate = fmtISODate(endMoment); endTime = fmtTimeHM(endMoment);
   }
 
   const membersHtml = state.familyMembers.map(m=>{
@@ -886,13 +909,13 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
         <input type="text" id="ev-emoji-search" placeholder="Zoek een pictogram (bijv. 'zwem' of 'oma')...">
         <div class="picto-picker-box" id="ev-emoji-pick">${renderPictoPicker(data.icon)}</div><input type="hidden" id="f-icon" value="${data.icon}">
         <div class="picto-custom-add">
-          <input type="text" id="ev-custom-icon" maxlength="4" placeholder="Eigen pictogram plakken (bijv. 🦖)">
+          <input type="text" id="ev-custom-icon" maxlength="20" placeholder="Eigen pictogram (bijv. 🦖)">
           <input type="text" id="ev-custom-label" placeholder="Naam (optioneel)">
           <div class="picto-custom-actions">
             <button type="button" class="btn btn-sm" id="btn-custom-once">Eenmalig gebruiken</button>
             <button type="button" class="btn btn-sm" id="btn-custom-save">Bewaren &amp; gebruiken</button>
           </div>
-          <div class="hint">Plak een pictogram vanaf je emoji-toetsenbord. "Eenmalig" gebruikt het alleen voor deze afspraak; "Bewaren" zet het ook bij je eigen pictogrammen hierboven, voor volgende keer.</div>
+          <div class="hint">Typ, plak of kies hier een pictogram vanaf je toetsenbord (op een telefoon: het emoji-toetsenbord; op een computer meestal met Windows-toets + punt, of op Mac via Ctrl+Cmd+Spatie). "Eenmalig" gebruikt het alleen voor deze afspraak; "Bewaren" zet het ook bij je eigen pictogrammen hierboven, voor volgende keer.</div>
         </div>
       </div>
       <div class="field"><label class="check-pill check-pill--inline"><input type="checkbox" id="f-allday" ${data.allDay?'checked':''}> Hele dag (geen specifieke tijd)</label></div>
@@ -1073,28 +1096,37 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
     document.getElementById('f-end-time').required = !on;
   });
 
-  // "Tot datum"/"Tot tijd" schuift automatisch mee als je "Van" later zet
-  // (duur blijft gelijk). Zet je "Van" juist vróeger, dan blijft "Tot" staan
-  // en wordt de afspraak dus langer.
+  // "Tot datum"/"Tot tijd" schuift automatisch mee als je "Van" later zet dan het punt waarop het
+  // formulier begon (duur blijft gelijk aan de duur bij openen). Zet je "Van" juist vróeger (of terug
+  // naar voor dat beginpunt), dan blijft "Tot" staan en wordt de afspraak dus langer.
+  //
+  // Belangrijk: "duration" en "refStartDT" worden hier NIET bij elke aanroep herberekend uit de dan
+  // actuele veldwaarden. Datum- en tijdveld vuren elk hun eigen 'change'-event; wie "Van" in één keer
+  // naar een andere dag én ander tijdstip zet, veroorzaakt dus twee losse aanroepen na elkaar. Met een
+  // steeds opnieuw afgeleide duur/referentie stapelden kleine tussentijdse (half aangepaste) standen
+  // zich op tot een verkeerde einduitkomst. Door de duur één keer vast te zetten bij het openen, en de
+  // referentie alleen bij te werken wanneer er ook echt geschoven is, geeft elke combinatie van datum-
+  // en tijdwijzigingen (in welke volgorde dan ook) hetzelfde, voorspelbare eindresultaat.
   const startDateEl = document.getElementById('f-start-date');
   const startTimeEl = document.getElementById('f-start-time');
   const endDateEl = document.getElementById('f-end-date');
   const endTimeEl = document.getElementById('f-end-time');
-  let prevStartDT = combineDateTime(startDateEl.value, startTimeEl.value || '00:00');
+  let refStartDT = combineDateTime(startDateEl.value, startTimeEl.value || '00:00');
+  const origDuration = combineDateTime(endDateEl.value, endTimeEl.value || '00:00') - refStartDT;
   function shiftEndWithStart(){
+    if(origDuration < 0) return; // ongeldige startdata (bijv. bij corrupte data) — niet aan sleutelen
     const newStartDT = combineDateTime(startDateEl.value, startTimeEl.value || '00:00');
-    const curEndDT = combineDateTime(endDateEl.value, endTimeEl.value || '00:00');
-    const duration = curEndDT - prevStartDT;
-    const movedLater = newStartDT > prevStartDT;
-    if(movedLater && startDateEl.value && (alldaySel.checked || startTimeEl.value) && !isNaN(newStartDT) && duration >= 0){
-      const newEndDT = new Date(newStartDT.getTime() + duration);
+    if(isNaN(newStartDT) || !startDateEl.value || !(alldaySel.checked || startTimeEl.value)) return;
+    if(newStartDT > refStartDT){
+      const newEndDT = new Date(newStartDT.getTime() + origDuration);
       endDateEl.value = fmtISODate(newEndDT);
       if(!alldaySel.checked) endTimeEl.value = fmtTimeHM(newEndDT);
+      refStartDT = newStartDT;
     }
-    prevStartDT = newStartDT;
   }
   startDateEl.addEventListener('change', shiftEndWithStart);
   startTimeEl.addEventListener('change', shiftEndWithStart);
+
 
   // "Tot" vóór "Van" wordt niet meer live gevalideerd tijdens het instellen
   // (op iOS vuurt de time-picker 'change' al bij elke tussentijdse wieltik,
