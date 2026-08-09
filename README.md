@@ -4,7 +4,7 @@ Een lichte, installeerbare webapp (PWA) waarmee een gezin samen één agenda, ki
 
 ## Functionaliteiten
 
-- **Agenda** — maand-, week- en dagweergave, afspraken toevoegen/bewerken, filteren per gezinslid
+- **Agenda** — maand-, week- en dagweergave, afspraken toevoegen/bewerken, filteren per gezinslid; bij herhalende afspraken kun je kiezen of een wijziging/verwijdering alleen dat ene exemplaar, dit + alle volgende, of de hele reeks raakt
 - **Kindweergave** — vereenvoudigd overzicht per kind (week/dag)
 - **Lijstjes** — gedeelde lijstjes in 3 types (afvinklijst, genummerde lijst, opsomming); items zijn te bewerken, te herordenen (▲/▼) en te verwijderen, met een knop om een hele lijst in één keer leeg te maken
 - **Gezinsleden beheren** — leden toevoegen, iemand markeren als "kind"

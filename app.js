@@ -315,11 +315,40 @@ function expandEvent(ev, rangeStart, rangeEnd){
     }
   }
 
+  const exSet = new Set((rec.exdates||[]).map(iso=> new Date(iso).getTime()));
   for(const occStart of occStarts){
+    if(exSet.has(occStart.getTime())) continue; // los exemplaar hier expliciet verwijderd of vervangen
     const occEnd = new Date(occStart.getTime()+duration);
     if(occEnd >= rangeStart && occStart <= rangeEnd) out.push({occStart, occEnd});
   }
   return out;
+}
+
+/* =========================================================
+   TERUGKERENDE AFSPRAKEN: uitzonderingen op een reeks
+   Eén los exemplaar wijzigen of verwijderen zonder de hele reeks aan te passen.
+   - "exdates" op de reeks: welke occurrence-tijdstippen worden overgeslagen bij het genereren.
+   - een los gewijzigd exemplaar wordt een gewoon (niet-herhalend) event met
+     recurrenceParentId (naar de reeks) en recurrenceOriginalStart (welk tijdstip het vervangt).
+   ========================================================= */
+function seriesChildren(seriesId){
+  return state.events.filter(e=> e.recurrenceParentId === seriesId);
+}
+function addExdateToSeries(seriesEv, occStart){
+  const iso = occStart.toISOString();
+  const cur = seriesEv.recurrence.exdates || [];
+  if(cur.includes(iso)) return seriesEv;
+  return Object.assign({}, seriesEv, { recurrence: Object.assign({}, seriesEv.recurrence, { exdates: cur.concat([iso]) }) });
+}
+/* Knipt een reeks af zodat hij eindigt vlak vóór occStart (voor "deze en alle volgende").
+   Exdates op/na occStart horen niet meer bij dit ingekorte deel en worden verwijderd
+   (die horen straks bij de nieuwe reeks die vanaf occStart verdergaat). */
+function truncateSeriesBefore(seriesEv, occStart){
+  const dayBefore = addDays(startOfDay(occStart), -1);
+  const exdates = (seriesEv.recurrence.exdates||[]).filter(iso => new Date(iso) < occStart);
+  return Object.assign({}, seriesEv, { recurrence: Object.assign({}, seriesEv.recurrence, {
+    endType: 'onDate', endDate: fmtISODate(dayBefore), exdates
+  })});
 }
 
 /* Geeft alle occurrences van alle (zichtbare) events binnen een periode terug, met event-referentie */
@@ -469,7 +498,7 @@ function layoutMonthWeek(weekStart, occs, laneMemory){
     const eDate = o.occEnd > endOfDay(weekEndDay) ? endOfDay(weekEndDay) : o.occEnd;
     const startCol = Math.round((startOfDay(s) - weekStart)/86400000);
     const endCol = Math.round((startOfDay(eDate) - weekStart)/86400000);
-    return {event:o.event, occEnd:o.occEnd, startCol, endCol};
+    return {event:o.event, occStart:o.occStart, occEnd:o.occEnd, startCol, endCol};
   });
   items.sort((a,b)=>{
     const aHas = laneMemory.has(a.event.id), bHas = laneMemory.has(b.event.id);
@@ -536,7 +565,7 @@ function renderMonthGrid(){
         return;
       }
       const c = eventColor(item.event);
-      barsHtml += `<div class="month-bar" style="grid-column:${item.startCol+1} / ${item.endCol+2}; grid-row:${item.lane+2}; background:${c};" data-eid="${item.event.id}" title="${escapeHtml(item.event.title)}">${item.event.icon||'📅'} ${escapeHtml(item.event.title)}</div>`;
+      barsHtml += `<div class="month-bar" style="grid-column:${item.startCol+1} / ${item.endCol+2}; grid-row:${item.lane+2}; background:${c};" data-eid="${item.event.id}" data-occstart="${item.occStart.toISOString()}" title="${escapeHtml(item.event.title)}">${item.event.icon||'📅'} ${escapeHtml(item.event.title)}</div>`;
     });
     let daycellsHtml = '';
     for(let c=0;c<7;c++){
@@ -561,7 +590,7 @@ function renderMonthGrid(){
 
 function attachMonthHandlers(){
   document.querySelectorAll('.month-bar').forEach(bar=>{
-    bar.addEventListener('click', (e)=>{ e.stopPropagation(); openEventModal(eventById(bar.dataset.eid)); });
+    bar.addEventListener('click', (e)=>{ e.stopPropagation(); openEventModal(eventById(bar.dataset.eid), null, {occStart:new Date(bar.dataset.occstart)}); });
   });
   document.querySelectorAll('.month-daycell, .month-overflow').forEach(cell=>{
     cell.addEventListener('click', ()=>{
@@ -626,7 +655,7 @@ function renderTimeGrid(startDate, numDays){
       const members = (o.event.participants||[]).map(id=>memberById(id)).filter(Boolean).map(m=>m.icon).join('');
       const widthPct = 100/o.totalCols;
       const leftPct = o.col*widthPct;
-      blocks += `<div class="event-block" style="top:${top}px; height:${Math.max(height,16)}px; left:calc(${leftPct}% + 2px); width:calc(${widthPct}% - 4px); background:${c};" data-eid="${o.event.id}">
+      blocks += `<div class="event-block" style="top:${top}px; height:${Math.max(height,16)}px; left:calc(${leftPct}% + 2px); width:calc(${widthPct}% - 4px); background:${c};" data-eid="${o.event.id}" data-occstart="${o.occStart.toISOString()}"
         <span class="t">${fmtTimeHM(o.occStart)}–${fmtTimeHM(o.occEnd)} ${members}</span>
         <span class="ttl">${escapeHtml(o.event.title)}</span>
         ${o.event.location?`<span class="loc">📍 ${escapeHtml(o.event.location)}</span>`:''}
@@ -645,7 +674,7 @@ function renderTimeGrid(startDate, numDays){
       const maxShow = 1;
       let pillsHtml = dayAllDay.slice(0,maxShow).map(o=>{
         const c = eventColor(o.event);
-        return `<div class="pill" style="background:${c}" data-eid="${o.event.id}" title="${escapeHtml(o.event.title)}">${o.event.icon||'📅'} ${escapeHtml(o.event.title)}</div>`;
+        return `<div class="pill" style="background:${c}" data-eid="${o.event.id}" data-occstart="${o.occStart.toISOString()}" title="${escapeHtml(o.event.title)}">${o.event.icon||'📅'} ${escapeHtml(o.event.title)}</div>`;
       }).join('');
       if(dayAllDay.length>maxShow) pillsHtml += `<div class="pill-more">+${dayAllDay.length-maxShow}</div>`;
       alldayRow = `<div class="time-col-allday">${pillsHtml}</div>`;
@@ -663,10 +692,10 @@ function renderTimeGrid(startDate, numDays){
 
 function attachTimeGridHandlers(){
   document.querySelectorAll('.event-block').forEach(el=>{
-    el.addEventListener('click', (e)=>{ e.stopPropagation(); openEventModal(eventById(el.dataset.eid)); });
+    el.addEventListener('click', (e)=>{ e.stopPropagation(); openEventModal(eventById(el.dataset.eid), null, {occStart:new Date(el.dataset.occstart)}); });
   });
   document.querySelectorAll('.time-col-allday .pill').forEach(el=>{
-    el.addEventListener('click', (e)=>{ e.stopPropagation(); openEventModal(eventById(el.dataset.eid)); });
+    el.addEventListener('click', (e)=>{ e.stopPropagation(); openEventModal(eventById(el.dataset.eid), null, {occStart:new Date(el.dataset.occstart)}); });
   });
   document.querySelectorAll('.hour-row').forEach(row=>{
     row.addEventListener('click', ()=>{
@@ -734,13 +763,37 @@ function renderPictoPicker(selectedIcon){
 /* =========================================================
    EVENT MODAL (aanmaken / bewerken)
    ========================================================= */
-function openEventModal(ev, prefill){
+/* occCtx = {occStart:Date} — meegegeven zodra vanuit de agenda/kindweergave op één specifiek
+   voorkomen van een afspraak is geklikt (niet bij "+ nieuwe afspraak"). Bij een echte herhalende
+   reeks vragen we dan eerst welke afspraken de actie moet raken, voordat het formulier opengaat. */
+function openEventModal(ev, prefill, occCtx){
+  if(ev && ev.recurrence && ev.recurrence.freq !== 'none' && occCtx && occCtx.occStart){
+    chooseRecurrenceScope(scope=>{
+      if(scope) buildAndOpenEventModal(ev, prefill, occCtx, scope);
+    });
+    return;
+  }
+  buildAndOpenEventModal(ev, prefill, occCtx, 'all');
+}
+
+function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
   const isEdit = !!ev;
   const data = ev ? JSON.parse(JSON.stringify(ev)) : {
     id: uid(), title:'', kindTekst:'', start:'', end:'', location:'', notes:'',
     icon:'📅', participants: (prefill && prefill.participants) ? prefill.participants.slice() : [], hiddenFromKidView: [], attachments: [], allDay:false,
     recurrence: {freq:'none', interval:1, endType:'never', endDate:'', count:5}
   };
+  // Bij "alleen deze afspraak" / "deze en alle volgende" bewerken we niet de ankerdatum van de
+  // reeks, maar het specifieke, aangeklikte tijdstip — en onthouden welke reeks/tijdstip dit was.
+  let recurrenceSeriesId = null, recurrenceOccStartISO = null;
+  if((editScope==='single' || editScope==='future') && occCtx && occCtx.occStart){
+    recurrenceSeriesId = data.id;
+    recurrenceOccStartISO = occCtx.occStart.toISOString();
+    const duration = new Date(data.end) - new Date(data.start);
+    data.start = occCtx.occStart.toISOString();
+    data.end = new Date(occCtx.occStart.getTime()+duration).toISOString();
+    if(editScope==='single') data.recurrence = {freq:'none', interval:1, endType:'never', endDate:'', count:5};
+  }
   let startDate, startTime, endDate, endTime;
   if(isEdit){
     const s = new Date(data.start), e = new Date(data.end);
@@ -773,8 +826,10 @@ function openEventModal(ev, prefill){
   const monthlyWeekdayVal = (rec.monthlyWeekday!=null) ? rec.monthlyWeekday : startWeekday;
   const monthlyPositionVal = rec.monthlyPosition || 1;
 
+  const scopeTitles = {single:'Alleen deze afspraak bewerken', future:'Deze en alle volgende bewerken', all:'Afspraak bewerken'};
+  const headTitle = !isEdit ? 'Nieuwe afspraak' : (occCtx ? (scopeTitles[editScope]||'Afspraak bewerken') : 'Afspraak bewerken');
   document.getElementById('modal-content').innerHTML = `
-    <div class="modal-head"><h2>${isEdit?'Afspraak bewerken':'Nieuwe afspraak'}</h2></div>
+    <div class="modal-head"><h2>${headTitle}</h2></div>
     <form id="event-form">
       <div class="field"><label>Titel</label><input type="text" id="f-title" required value="${escapeHtml(data.title)}" placeholder="Bijv. Tandarts Sanne"></div>
       <div class="field"><label>Korte tekst voor kindweergave (optioneel)</label><input type="text" id="f-kindtekst" value="${escapeHtml(data.kindTekst||'')}" placeholder="Bijv. Tandarts"></div>
@@ -801,13 +856,15 @@ function openEventModal(ev, prefill){
       </div>
 
       <div class="field"><label>Herhaling</label>
-        <select id="f-rec-freq">
+        <select id="f-rec-freq" ${editScope==='single'?'disabled':''}>
           <option value="none" ${rec.freq==='none'?'selected':''}>Geen herhaling</option>
           <option value="daily" ${rec.freq==='daily'?'selected':''}>Dagelijks</option>
           <option value="weekly" ${rec.freq==='weekly'?'selected':''}>Wekelijks</option>
           <option value="monthly" ${rec.freq==='monthly'?'selected':''}>Maandelijks</option>
           <option value="yearly" ${rec.freq==='yearly'?'selected':''}>Jaarlijks</option>
         </select>
+        ${editScope==='single' ? '<div class="hint">Dit wordt een los exemplaar uit de reeks en herhaalt niet apart.</div>' : ''}
+        ${editScope==='future' ? '<div class="hint">Dit patroon geldt vanaf dit tijdstip; afspraken vóór dit tijdstip in de reeks blijven ongewijzigd.</div>' : ''}
       </div>
       <div id="rec-extra" class="${rec.freq==='none'?'is-hidden':''}">
         <div class="row2">
@@ -1000,12 +1057,55 @@ function openEventModal(ev, prefill){
   document.getElementById('btn-cancel-modal').addEventListener('click', closeModal);
   const delBtn = document.getElementById('btn-delete-event');
   if(delBtn) delBtn.addEventListener('click', ()=>{
-    confirmDialog('Deze afspraak (en alle herhalingen) verwijderen?', ()=>{
-      state.events = state.events.filter(x=>x.id!==data.id);
-      window.fbSync.deleteEventRemote(data.id).catch(reportSyncError); closeModal(); renderAgenda();
-      if(document.getElementById('panel-kind').classList.contains('active')) renderKid();
-      showToast('Afspraak verwijderd');
-    });
+    if(editScope==='single'){
+      confirmDialog('Deze ene afspraak uit de reeks verwijderen? De rest van de herhaling blijft gewoon staan.', ()=>{
+        const parent = eventById(recurrenceSeriesId);
+        if(parent){
+          const updatedParent = addExdateToSeries(parent, new Date(recurrenceOccStartISO));
+          const pIdx = state.events.findIndex(x=>x.id===parent.id);
+          state.events[pIdx] = updatedParent;
+          window.fbSync.syncEvent(updatedParent).catch(reportSyncError);
+        }
+        closeModal(); renderAgenda();
+        if(document.getElementById('panel-kind').classList.contains('active')) renderKid();
+        showToast('Afspraak verwijderd');
+      });
+    } else if(editScope==='future'){
+      confirmDialog('Deze afspraak en alle volgende herhalingen verwijderen? Eerdere afspraken in de reeks blijven staan.', ()=>{
+        const parent = eventById(recurrenceSeriesId);
+        const splitPoint = new Date(recurrenceOccStartISO);
+        if(parent){
+          const truncated = truncateSeriesBefore(parent, splitPoint);
+          const pIdx = state.events.findIndex(x=>x.id===parent.id);
+          state.events[pIdx] = truncated;
+          window.fbSync.syncEvent(truncated).catch(reportSyncError);
+          seriesChildren(parent.id).forEach(child=>{
+            if(child.recurrenceOriginalStart && new Date(child.recurrenceOriginalStart) > splitPoint){
+              state.events = state.events.filter(x=>x.id!==child.id);
+              window.fbSync.deleteEventRemote(child.id).catch(reportSyncError);
+            }
+          });
+        }
+        closeModal(); renderAgenda();
+        if(document.getElementById('panel-kind').classList.contains('active')) renderKid();
+        showToast('Afspraak en volgende herhalingen verwijderd');
+      });
+    } else {
+      const isSeries = data.recurrence && data.recurrence.freq !== 'none';
+      confirmDialog(isSeries ? 'Deze hele reeks (alle herhalingen) verwijderen?' : 'Deze afspraak verwijderen?', ()=>{
+        state.events = state.events.filter(x=>x.id!==data.id);
+        window.fbSync.deleteEventRemote(data.id).catch(reportSyncError);
+        if(isSeries){
+          seriesChildren(data.id).forEach(child=>{
+            state.events = state.events.filter(x=>x.id!==child.id);
+            window.fbSync.deleteEventRemote(child.id).catch(reportSyncError);
+          });
+        }
+        closeModal(); renderAgenda();
+        if(document.getElementById('panel-kind').classList.contains('active')) renderKid();
+        showToast('Afspraak verwijderd');
+      });
+    }
   });
 
   document.getElementById('event-form').addEventListener('submit', (e)=>{
@@ -1057,13 +1157,59 @@ function openEventModal(ev, prefill){
       allDay: isAllDay,
       recurrence
     };
-    if(isEdit){
+    // Een al bestaand los exemplaar (override) blijft gekoppeld aan zijn reeks bij normaal bewerken.
+    if(data.recurrenceParentId){
+      newEvent.recurrenceParentId = data.recurrenceParentId;
+      newEvent.recurrenceOriginalStart = data.recurrenceOriginalStart;
+    }
+
+    if(editScope==='single'){
+      newEvent.id = uid();
+      newEvent.recurrence = {freq:'none'};
+      newEvent.recurrenceParentId = recurrenceSeriesId;
+      newEvent.recurrenceOriginalStart = recurrenceOccStartISO;
+      const parent = eventById(recurrenceSeriesId);
+      if(parent){
+        const updatedParent = addExdateToSeries(parent, new Date(recurrenceOccStartISO));
+        const pIdx = state.events.findIndex(x=>x.id===parent.id);
+        state.events[pIdx] = updatedParent;
+        window.fbSync.syncEvent(updatedParent).catch(reportSyncError);
+      }
+      state.events.push(newEvent);
+      window.fbSync.syncEvent(newEvent).catch(reportSyncError);
+    } else if(editScope==='future'){
+      const parent = eventById(recurrenceSeriesId);
+      const splitPoint = new Date(recurrenceOccStartISO);
+      newEvent.id = uid();
+      if(parent){
+        const truncated = truncateSeriesBefore(parent, splitPoint);
+        const pIdx = state.events.findIndex(x=>x.id===parent.id);
+        state.events[pIdx] = truncated;
+        window.fbSync.syncEvent(truncated).catch(reportSyncError);
+        // Toekomstige losse afwijkingen van de oude reeks horen nu bij deze nieuwe reeks.
+        seriesChildren(parent.id).forEach(child=>{
+          if(child.recurrenceOriginalStart && new Date(child.recurrenceOriginalStart) > splitPoint){
+            const updatedChild = Object.assign({}, child, { recurrenceParentId: newEvent.id });
+            const cIdx = state.events.findIndex(x=>x.id===child.id);
+            state.events[cIdx] = updatedChild;
+            window.fbSync.syncEvent(updatedChild).catch(reportSyncError);
+          }
+        });
+        newEvent.recurrence = Object.assign({}, newEvent.recurrence, {
+          exdates: (parent.recurrence.exdates||[]).filter(iso=> new Date(iso) > splitPoint)
+        });
+      }
+      state.events.push(newEvent);
+      window.fbSync.syncEvent(newEvent).catch(reportSyncError);
+    } else if(isEdit){
       const idx = state.events.findIndex(x=>x.id===data.id);
       state.events[idx] = newEvent;
+      window.fbSync.syncEvent(newEvent).catch(reportSyncError);
     } else {
       state.events.push(newEvent);
+      window.fbSync.syncEvent(newEvent).catch(reportSyncError);
     }
-    window.fbSync.syncEvent(newEvent).catch(reportSyncError); closeModal(); renderAgenda();
+    closeModal(); renderAgenda();
     if(document.getElementById('panel-kind').classList.contains('active')) renderKid();
     showToast('Afspraak opgeslagen');
   });
@@ -1114,6 +1260,27 @@ function alertDialog(msg, onOk){
 }
 function openAlert(){ document.getElementById('alert-overlay').classList.add('open'); }
 function closeAlert(){ document.getElementById('alert-overlay').classList.remove('open'); }
+
+/* Keuzedialoog die verschijnt zodra iemand op één voorkomen van een herhalende afspraak klikt:
+   bepaalt of de actie (bewerken/verwijderen) alleen dit exemplaar, dit + alle volgende, of de
+   hele reeks moet raken. onChoose krijgt 'single' | 'future' | 'all', of null bij annuleren. */
+function chooseRecurrenceScope(onChoose){
+  document.getElementById('alert-content').innerHTML = `
+    <div class="modal-head"><h2>Welke afspraken?</h2></div>
+    <p>Dit is onderdeel van een herhalende afspraak. Wat wil je aanpassen?</p>
+    <div style="display:flex; flex-direction:column; gap:8px; margin-top:14px;">
+      <button type="button" class="btn" id="scope-single">Alleen deze afspraak</button>
+      <button type="button" class="btn" id="scope-future">Deze en alle volgende</button>
+      <button type="button" class="btn" id="scope-all">Hele reeks</button>
+      <button type="button" class="btn btn-danger" id="scope-cancel" style="border-color:var(--line); color:inherit;">Annuleren</button>
+    </div>`;
+  const pick = (v)=>{ closeAlert(); onChoose(v); };
+  document.getElementById('scope-single').addEventListener('click', ()=> pick('single'));
+  document.getElementById('scope-future').addEventListener('click', ()=> pick('future'));
+  document.getElementById('scope-all').addEventListener('click', ()=> pick('all'));
+  document.getElementById('scope-cancel').addEventListener('click', ()=> pick(null));
+  openAlert();
+}
 
 
 /* =========================================================
@@ -1182,7 +1349,7 @@ function renderKid(){
       const timedOccs = dayOccs.filter(o=> occDayLabel(o.event, o.occStart, o.occEnd, day) !== 'Hele dag');
       let rows = '';
       wholeDayOccs.forEach(o=>{
-        rows += `<div class="picto-row" data-eid="${o.event.id}">
+        rows += `<div class="picto-row" data-eid="${o.event.id}" data-occstart="${o.occStart.toISOString()}">
           <span class="em">${o.event.icon||'📅'}</span>
           <div class="picto-row-info">
             <span class="tm">Hele dag</span>
@@ -1194,7 +1361,7 @@ function renderKid(){
       timedOccs.forEach(o=>{
         const part = partOfDay(o.occStart);
         if(part.key!==lastPart){ rows += `<div class="daypart-head">${part.em} ${part.label}</div>`; lastPart = part.key; }
-        rows += `<div class="picto-row" data-eid="${o.event.id}">
+        rows += `<div class="picto-row" data-eid="${o.event.id}" data-occstart="${o.occStart.toISOString()}">
           <span class="em">${o.event.icon||'📅'}</span>
           <div class="picto-row-info">
             <span class="tm">${occDayLabel(o.event, o.occStart, o.occEnd, day)}</span>
@@ -1217,7 +1384,7 @@ function renderKid(){
       b.addEventListener('click', ()=> openEventModal(null, {date:b.dataset.date, hour:9, participants:[kidId]}));
     });
     body.querySelectorAll('.picto-row').forEach(r=>{
-      r.addEventListener('click', ()=> openEventModal(eventById(r.dataset.eid)));
+      r.addEventListener('click', ()=> openEventModal(eventById(r.dataset.eid), null, {occStart:new Date(r.dataset.occstart)}));
     });
   } else {
     label.textContent = DOW_LONG[kidDate.getDay()].replace(/^./,c=>c.toUpperCase())+' '+kidDate.getDate()+' '+MONTHS[kidDate.getMonth()];
@@ -1241,7 +1408,7 @@ function renderKid(){
     const wholeDayOccs = occs.filter(o=> occDayLabel(o.event, o.occStart, o.occEnd, kidDate) === 'Hele dag');
     const timedOccs = occs.filter(o=> occDayLabel(o.event, o.occStart, o.occEnd, kidDate) !== 'Hele dag');
     wholeDayOccs.forEach(o=>{
-      html += `<div class="rail-item" data-eid="${o.event.id}"><div class="rail-card">
+      html += `<div class="rail-item" data-eid="${o.event.id}" data-occstart="${o.occStart.toISOString()}"><div class="rail-card">
         <span class="em">${o.event.icon||'📅'}</span>
         <div class="info">
           <span class="title">${escapeHtml(o.event.kindTekst || o.event.title)}</span>
@@ -1260,7 +1427,7 @@ function renderKid(){
         html += `<div class="rail-now"><div class="line"></div></div>`;
         nowInserted = true;
       }
-      html += `<div class="rail-item" data-eid="${o.event.id}"><div class="rail-card">
+      html += `<div class="rail-item" data-eid="${o.event.id}" data-occstart="${o.occStart.toISOString()}"><div class="rail-card">
         <span class="em">${o.event.icon||'📅'}</span>
         <div class="info">
           <span class="title">${escapeHtml(o.event.kindTekst || o.event.title)}</span>
@@ -1273,7 +1440,7 @@ function renderKid(){
     html += '</div>';
     body.innerHTML = html;
     body.querySelectorAll('.rail-item').forEach(r=>{
-      r.addEventListener('click', ()=> openEventModal(eventById(r.dataset.eid)));
+      r.addEventListener('click', ()=> openEventModal(eventById(r.dataset.eid), null, {occStart:new Date(r.dataset.occstart)}));
     });
   }
 }
