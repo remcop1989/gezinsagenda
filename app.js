@@ -1011,30 +1011,18 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
       const newEndDT = new Date(newStartDT.getTime() + duration);
       endDateEl.value = fmtISODate(newEndDT);
       if(!alldaySel.checked) endTimeEl.value = fmtTimeHM(newEndDT);
-      prevEndDateVal = endDateEl.value;
-      prevEndTimeVal = endTimeEl.value;
     }
     prevStartDT = newStartDT;
   }
   startDateEl.addEventListener('change', shiftEndWithStart);
   startTimeEl.addEventListener('change', shiftEndWithStart);
 
-  // "Tot" mag nooit vóór "Van" liggen: direct valideren zodra Tot-datum/-tijd wijzigt.
-  let prevEndDateVal = endDateEl.value, prevEndTimeVal = endTimeEl.value;
-  function validateEndNotBeforeStart(){
-    const startDT = combineDateTime(startDateEl.value, startTimeEl.value || '00:00');
-    const newEndDT = combineDateTime(endDateEl.value, endTimeEl.value || '00:00');
-    if(newEndDT < startDT){
-      alertDialog('"Tot" kan niet vóór "Van" liggen. Het einde van een afspraak moet op of na het begin liggen. De eind-datum/tijd is teruggezet naar de vorige waarde — pas deze aan om verder te gaan.');
-      endDateEl.value = prevEndDateVal;
-      endTimeEl.value = prevEndTimeVal;
-      return;
-    }
-    prevEndDateVal = endDateEl.value;
-    prevEndTimeVal = endTimeEl.value;
-  }
-  endDateEl.addEventListener('change', validateEndNotBeforeStart);
-  endTimeEl.addEventListener('change', validateEndNotBeforeStart);
+  // "Tot" vóór "Van" wordt niet meer live gevalideerd tijdens het instellen
+  // (op iOS vuurt de time-picker 'change' al bij elke tussentijdse wieltik,
+  // waardoor deze check daar te vroeg afging). De waarde blijft nu gewoon
+  // staan zolang je aan het invullen bent; de check gebeurt pas bij opslaan
+  // (zie submit-handler hieronder), en de ingevoerde datum/tijd blijft dan
+  // staan zodat je 'm kunt corrigeren.
 
   const freqSel = document.getElementById('f-rec-freq');
   function updateRecVisibility(){
