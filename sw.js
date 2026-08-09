@@ -3,7 +3,7 @@
    Live Firestore/Auth-verkeer wordt hier bewust NIET onderschept — dat regelt
    de Firestore SDK zelf (incl. eigen offline-cache en automatische sync). */
 
-const CACHE_NAME = 'gezinsagenda-cache-v24';
+const CACHE_NAME = 'gezinsagenda-cache-v25';
 const APP_SHELL = ['./', './index.html'];
 
 self.addEventListener('install', (event) => {

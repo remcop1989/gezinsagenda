@@ -51,6 +51,7 @@ window.fbSync = {
     onSnapshot(metaRef, { includeMetadataChanges: true }, (snap)=>{
       const data = snap.exists() ? snap.data() : null;
       callbacks.onMembers(data && data.familyMembers ? data.familyMembers : null, snap.metadata.fromCache);
+      if(callbacks.onSettings) callbacks.onSettings(data && data.settings ? data.settings : null, snap.metadata.fromCache);
     }, (err)=> callbacks.onError && callbacks.onError('gezinsleden', err));
 
     onSnapshot(eventsCol, { includeMetadataChanges: true }, (snap)=>{
@@ -61,13 +62,17 @@ window.fbSync = {
       callbacks.onLists(snap.docs.map(d=>d.data()), snap.metadata.fromCache);
     }, (err)=> callbacks.onError && callbacks.onError('lijstjes', err));
   },
-  async syncMembers(members){ await setDoc(window.fbSync._metaRef, { familyMembers: members }); },
+  // merge:true is hier bewust toegevoegd: zonder merge overschrijft een schrijfactie van het
+  // ene veld (bijv. familyMembers) het andere veld (settings) in hetzelfde meta/main-document,
+  // omdat setDoc zonder merge het hele document vervangt.
+  async syncMembers(members){ await setDoc(window.fbSync._metaRef, { familyMembers: members }, { merge: true }); },
+  async syncSettings(settings){ await setDoc(window.fbSync._metaRef, { settings: settings || {} }, { merge: true }); },
   async syncEvent(ev){ await setDoc(doc(window.fbSync._eventsCol, ev.id), ev); },
   async deleteEventRemote(id){ await deleteDoc(doc(window.fbSync._eventsCol, id)); },
   async syncList(list){ await setDoc(doc(window.fbSync._listsCol, list.id), list); },
   async deleteListRemote(id){ await deleteDoc(doc(window.fbSync._listsCol, id)); },
-  async replaceAll(members, events, lists){
-    await setDoc(window.fbSync._metaRef, { familyMembers: members });
+  async replaceAll(members, events, lists, settings){
+    await setDoc(window.fbSync._metaRef, { familyMembers: members, settings: settings || {} });
     const existingEvents = await getDocs(window.fbSync._eventsCol);
     await Promise.all(existingEvents.docs.map(d=>deleteDoc(d.ref)));
     await Promise.all(events.map(ev=>setDoc(doc(window.fbSync._eventsCol, ev.id), ev)));

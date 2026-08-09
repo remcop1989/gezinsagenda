@@ -4,10 +4,11 @@ Een lichte, installeerbare webapp (PWA) waarmee een gezin samen één agenda, ki
 
 ## Functionaliteiten
 
-- **Agenda** — maand-, week- en dagweergave, afspraken toevoegen/bewerken, filteren per gezinslid; bij herhalende afspraken kun je kiezen of een wijziging/verwijdering alleen dat ene exemplaar, dit + alle volgende, of de hele reeks raakt
+- **Agenda** — maand-, week- en dagweergave, afspraken toevoegen/bewerken, filteren per gezinslid; bij herhalende afspraken kun je kiezen of een wijziging/verwijdering alleen dat ene exemplaar, dit + alle volgende, of de hele reeks raakt. Een afspraak zonder deelnemer krijgt automatisch een eigen filter-chip "Geen deelnemer" (alleen zichtbaar zolang zulke afspraken bestaan), zodat die nooit onbedoeld uit beeld verdwijnt als je de gezinsleden-filters gebruikt
 - **Kindweergave** — vereenvoudigd overzicht per kind (week/dag)
 - **Lijstjes** — gedeelde lijstjes in 3 types (afvinklijst, genummerde lijst, opsomming); items zijn te bewerken, te herordenen (▲/▼) en te verwijderen, met een knop om een hele lijst in één keer leeg te maken
 - **Gezinsleden beheren** — leden toevoegen, iemand markeren als "kind"
+- **Deelnemer verplicht instellen** — optionele instelling (Instellingen → Afspraken) die vanaf het moment van aanzetten minstens één deelnemer verplicht bij het aanmaken/bewerken van een afspraak. Geldt niet met terugwerkende kracht: bestaande afspraken zonder deelnemer blijven gewoon bestaan en zijn terug te vinden via de "Geen deelnemer"-filter in de agenda
 - **Meldingen** — lokale melding ~15 min voor een afspraak (geen achtergrond-push)
 - **Export/import** — back-up van alle gegevens als `.json`
 - **Offline-ondersteuning** — werkt als PWA met een service worker, installeerbaar op beginscherm

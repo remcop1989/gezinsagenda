@@ -162,7 +162,7 @@ function nthWeekdayOfMonth(year, monthIndex, weekday, position){
    hierboven in de module-<script>) in plaats van door localStorage, zodat
    alle apparaten in hetzelfde gezin dezelfde data zien.
    ========================================================= */
-let state = { familyMembers: [], events: [], lists: [] };
+let state = { familyMembers: [], events: [], lists: [], settings: {} };
 let listsSeeded = false;
 
 function defaultFamilyMembers(){
@@ -351,13 +351,24 @@ function truncateSeriesBefore(seriesEv, occStart){
   })});
 }
 
+/* Virtueel "gezinslid"-ID voor afspraken zonder deelnemers, zodat deze meedoen
+   in de deelnemer-filters (chip "Geen deelnemer") zonder een echt gezinslid te zijn. */
+const NONE_MEMBER_ID = '__none__';
+
+function countEventsWithoutParticipants(){
+  return state.events.filter(ev=>!ev.participants || ev.participants.length===0).length;
+}
+
 /* Geeft alle occurrences van alle (zichtbare) events binnen een periode terug, met event-referentie */
 function occurrencesInRange(rangeStart, rangeEnd, filterMemberIds, excludeDayOnly){
   const out = [];
   for(const ev of state.events){
     if(excludeDayOnly && ev.onlyDayView) continue;
     if(Array.isArray(filterMemberIds)){
-      const overlaps = ev.participants.some(id=>filterMemberIds.includes(id));
+      const hasParticipants = ev.participants && ev.participants.length>0;
+      const overlaps = hasParticipants
+        ? ev.participants.some(id=>filterMemberIds.includes(id))
+        : filterMemberIds.includes(NONE_MEMBER_ID);
       if(!overlaps) continue;
     }
     const occs = expandEvent(ev, rangeStart, rangeEnd);
@@ -433,16 +444,26 @@ function stepAgenda(dir){
 function renderMemberFilters(){
   const wrap = document.getElementById('agenda-member-filters');
   if(state.familyMembers.length===0){ wrap.innerHTML=''; return; }
+  // De "Geen deelnemer"-chip verschijnt alleen als daar ook echt afspraken voor zijn — zodra
+  // de laatste zo'n afspraak een deelnemer heeft gekregen (of is verwijderd), verdwijnt de chip
+  // vanzelf weer. Dit staat los van de instelling "Deelnemer verplicht bij nieuwe afspraken":
+  // die instelling regelt alleen nieuwe/bewerkte afspraken, niet of de chip zichtbaar is.
+  const showNoneChip = countEventsWithoutParticipants() > 0;
+  const all = state.familyMembers.map(m=>m.id).concat(showNoneChip ? [NONE_MEMBER_ID] : []);
   wrap.innerHTML = state.familyMembers.map(m=>{
     const on = !agendaVisibleMembers || agendaVisibleMembers.includes(m.id);
     return `<button class="chip ${on?'on':''}" data-mid="${m.id}" style="border-color:${on?m.color:'var(--line)'}">
       <span class="swatch" style="background:${m.color}">${m.icon}</span>${escapeHtml(m.name)}
     </button>`;
-  }).join('');
+  }).join('') + (showNoneChip ? (()=>{
+    const on = !agendaVisibleMembers || agendaVisibleMembers.includes(NONE_MEMBER_ID);
+    return `<button class="chip ${on?'on':''}" data-mid="${NONE_MEMBER_ID}" style="border-color:${on?'var(--ink-soft)':'var(--line)'}">
+      <span class="swatch" style="background:var(--ink-soft)">–</span>Geen deelnemer
+    </button>`;
+  })() : '');
   wrap.querySelectorAll('.chip').forEach(chip=>{
     chip.addEventListener('click', ()=>{
       const id = chip.dataset.mid;
-      const all = state.familyMembers.map(m=>m.id);
       if(!agendaVisibleMembers) agendaVisibleMembers = all.slice();
       if(agendaVisibleMembers.includes(id)){
         agendaVisibleMembers = agendaVisibleMembers.filter(x=>x!==id);
@@ -1108,6 +1129,10 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
     const startDT = combineDateTime(sd, st), endDT = combineDateTime(ed, et);
     if(endDT < startDT){ alertDialog('"Tot" kan niet vóór "Van" liggen. Het einde van een afspraak moet op of na het begin liggen. De afspraak is nog niet opgeslagen — pas de datum/tijd aan en probeer het opnieuw.'); return; }
     const participants = Array.from(document.querySelectorAll('#event-form .ev-participant-cb:checked')).map(i=>i.value);
+    if(state.settings && state.settings.requireParticipant && participants.length===0){
+      alertDialog('Kies minstens één deelnemer. Dit is verplicht ingesteld bij Instellingen. De afspraak is nog niet opgeslagen.');
+      return;
+    }
     const hiddenFromKidView = Array.from(document.querySelectorAll('#event-form .ev-hide-kid-cb:checked')).map(i=>i.value).filter(id=>participants.includes(id));
     const freq = document.getElementById('f-rec-freq').value;
     let recurrence = {freq:'none'};
@@ -1683,6 +1708,9 @@ function renderSettings(){
   const codeEl = document.getElementById('current-hh-code');
   if(codeEl) codeEl.textContent = localStorage.getItem('gezinsagenda-hh-code') || '—';
 
+  const reqCb = document.getElementById('setting-require-participant');
+  if(reqCb) reqCb.checked = !!(state.settings && state.settings.requireParticipant);
+
   const wrap = document.getElementById('members-list');
   wrap.innerHTML = state.familyMembers.map(m=>`
     <div class="member-row">
@@ -1707,6 +1735,25 @@ function renderSettings(){
   }));
 }
 document.getElementById('btn-add-member').addEventListener('click', ()=> openMemberModal(null));
+
+// Deze listener staat hier (los van renderSettings) omdat de checkbox zelf statisch in
+// index.html staat en niet bij elke renderSettings()-aanroep opnieuw wordt aangemaakt —
+// zou de listener wél in renderSettings() staan, dan zou hij bij elke re-render nog een keer
+// worden toegevoegd (dubbele/meervoudige triggers bij één klik).
+const requireParticipantCb = document.getElementById('setting-require-participant');
+if(requireParticipantCb){
+  requireParticipantCb.addEventListener('change', ()=>{
+    const on = requireParticipantCb.checked;
+    state.settings = Object.assign({}, state.settings, {requireParticipant: on});
+    window.fbSync.syncSettings(state.settings).catch(reportSyncError);
+    if(on){
+      const n = countEventsWithoutParticipants();
+      if(n>0){
+        alertDialog(`Vanaf nu is een deelnemer verplicht bij nieuwe of gewijzigde afspraken. Je hebt nog ${n} bestaande ${n===1?'afspraak':'afspraken'} zonder deelnemer — die ${n===1?'blijft':'blijven'} ongewijzigd. Gebruik de filter "Geen deelnemer" in de agenda om ${n===1?'m':'ze'} terug te vinden.`);
+      }
+    }
+  });
+}
 
 function openMemberModal(existing){
   const isEdit = !!existing;
@@ -1779,9 +1826,10 @@ document.getElementById('import-file').addEventListener('change', (e)=>{
       const parsed = JSON.parse(reader.result);
       if(!parsed.familyMembers || !parsed.events || !parsed.lists) throw new Error('ongeldig formaat');
       parsed.familyMembers.forEach(m=>{ if(!m.role) m.role = 'volwassene'; });
+      if(!parsed.settings) parsed.settings = {}; // oudere back-ups kennen dit veld nog niet
       confirmDialog('Huidige gegevens vervangen door dit back-upbestand?', ()=>{
         state = parsed;
-        window.fbSync.replaceAll(state.familyMembers, state.events, state.lists).catch(reportSyncError);
+        window.fbSync.replaceAll(state.familyMembers, state.events, state.lists, state.settings).catch(reportSyncError);
         closeModal();
         renderAgenda(); renderKid(); renderLists(); renderSettings();
         showToast('Gegevens geïmporteerd');
@@ -1828,6 +1876,11 @@ function startApp(code){
       } else {
         state.familyMembers = members;
       }
+      rerenderAll();
+      updateSyncStatus(fromCache ? 'offline' : 'online');
+    },
+    onSettings(settings, fromCache){
+      state.settings = settings || {};
       rerenderAll();
       updateSyncStatus(fromCache ? 'offline' : 'online');
     },
