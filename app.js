@@ -768,9 +768,7 @@ function renderPictoPicker(selectedIcon){
    reeks vragen we dan eerst welke afspraken de actie moet raken, voordat het formulier opengaat. */
 function openEventModal(ev, prefill, occCtx){
   if(ev && ev.recurrence && ev.recurrence.freq !== 'none' && occCtx && occCtx.occStart){
-    chooseRecurrenceScope(scope=>{
-      if(scope) buildAndOpenEventModal(ev, prefill, occCtx, scope);
-    });
+    openRecurrenceActionChooser(ev, occCtx);
     return;
   }
   buildAndOpenEventModal(ev, prefill, occCtx, 'all');
@@ -1264,22 +1262,83 @@ function closeAlert(){ document.getElementById('alert-overlay').classList.remove
 /* Keuzedialoog die verschijnt zodra iemand op één voorkomen van een herhalende afspraak klikt:
    bepaalt of de actie (bewerken/verwijderen) alleen dit exemplaar, dit + alle volgende, of de
    hele reeks moet raken. onChoose krijgt 'single' | 'future' | 'all', of null bij annuleren. */
-function chooseRecurrenceScope(onChoose){
+/* Toont in één keuzescherm zowel de bewerk- als verwijderopties voor een voorkomen van een
+   herhalende afspraak. Verwijderen gebeurt direct vanuit dit scherm (met een korte bevestiging) —
+   niet meer via "open het bewerkformulier en klik daar nogmaals op verwijderen", omdat dat
+   omslachtig was en onduidelijk liet of de actie al had plaatsgevonden. */
+function openRecurrenceActionChooser(ev, occCtx){
+  const occStart = occCtx.occStart;
   document.getElementById('alert-content').innerHTML = `
     <div class="modal-head"><h2>Welke afspraken?</h2></div>
-    <p>Dit is onderdeel van een herhalende afspraak. Wat wil je aanpassen?</p>
-    <div style="display:flex; flex-direction:column; gap:8px; margin-top:14px;">
-      <button type="button" class="btn" id="scope-single">Alleen deze afspraak</button>
-      <button type="button" class="btn" id="scope-future">Deze en alle volgende</button>
-      <button type="button" class="btn" id="scope-all">Hele reeks</button>
-      <button type="button" class="btn btn-danger" id="scope-cancel" style="border-color:var(--line); color:inherit;">Annuleren</button>
-    </div>`;
-  const pick = (v)=>{ closeAlert(); onChoose(v); };
-  document.getElementById('scope-single').addEventListener('click', ()=> pick('single'));
-  document.getElementById('scope-future').addEventListener('click', ()=> pick('future'));
-  document.getElementById('scope-all').addEventListener('click', ()=> pick('all'));
-  document.getElementById('scope-cancel').addEventListener('click', ()=> pick(null));
+    <p>Dit is onderdeel van een herhalende afspraak.</p>
+    <div class="hint" style="margin-top:10px;">✏️ Bewerken</div>
+    <div style="display:flex; flex-direction:column; gap:8px; margin-top:6px;">
+      <button type="button" class="btn" id="act-edit-single">Alleen deze afspraak</button>
+      <button type="button" class="btn" id="act-edit-future">Deze en alle volgende</button>
+      <button type="button" class="btn" id="act-edit-all">Hele reeks</button>
+    </div>
+    <div class="hint" style="margin-top:14px;">🗑️ Verwijderen</div>
+    <div style="display:flex; flex-direction:column; gap:8px; margin-top:6px;">
+      <button type="button" class="btn btn-danger" id="act-del-single">Alleen deze afspraak</button>
+      <button type="button" class="btn btn-danger" id="act-del-future">Deze en alle volgende</button>
+      <button type="button" class="btn btn-danger" id="act-del-all">Hele reeks</button>
+    </div>
+    <div class="modal-actions"><div></div><div class="modal-actions-buttons">
+      <button type="button" class="btn" id="act-cancel">Annuleren</button>
+    </div></div>`;
+  document.getElementById('act-edit-single').addEventListener('click', ()=>{ closeAlert(); buildAndOpenEventModal(ev, null, occCtx, 'single'); });
+  document.getElementById('act-edit-future').addEventListener('click', ()=>{ closeAlert(); buildAndOpenEventModal(ev, null, occCtx, 'future'); });
+  document.getElementById('act-edit-all').addEventListener('click', ()=>{ closeAlert(); buildAndOpenEventModal(ev, null, occCtx, 'all'); });
+  document.getElementById('act-del-single').addEventListener('click', ()=>{ closeAlert(); deleteRecurrenceOccurrence(ev, occStart, 'single'); });
+  document.getElementById('act-del-future').addEventListener('click', ()=>{ closeAlert(); deleteRecurrenceOccurrence(ev, occStart, 'future'); });
+  document.getElementById('act-del-all').addEventListener('click', ()=>{ closeAlert(); deleteRecurrenceOccurrence(ev, occStart, 'all'); });
+  document.getElementById('act-cancel').addEventListener('click', closeAlert);
   openAlert();
+}
+
+/* Verwijdert direct (na bevestiging) — zonder tussenkomst van het bewerkformulier — één
+   voorkomen, dit + alle volgende, of de hele reeks van een herhalende afspraak. */
+function deleteRecurrenceOccurrence(ev, occStart, scope){
+  const afterKidRefresh = ()=>{
+    renderAgenda();
+    if(document.getElementById('panel-kind').classList.contains('active')) renderKid();
+  };
+  if(scope==='single'){
+    confirmDialog('Deze ene afspraak uit de reeks verwijderen? De rest van de herhaling blijft gewoon staan.', ()=>{
+      const updatedParent = addExdateToSeries(ev, occStart);
+      const pIdx = state.events.findIndex(x=>x.id===ev.id);
+      state.events[pIdx] = updatedParent;
+      window.fbSync.syncEvent(updatedParent).catch(reportSyncError);
+      afterKidRefresh();
+      showToast('Afspraak verwijderd');
+    });
+  } else if(scope==='future'){
+    confirmDialog('Deze afspraak en alle volgende herhalingen verwijderen? Eerdere afspraken in de reeks blijven staan.', ()=>{
+      const truncated = truncateSeriesBefore(ev, occStart);
+      const pIdx = state.events.findIndex(x=>x.id===ev.id);
+      state.events[pIdx] = truncated;
+      window.fbSync.syncEvent(truncated).catch(reportSyncError);
+      seriesChildren(ev.id).forEach(child=>{
+        if(child.recurrenceOriginalStart && new Date(child.recurrenceOriginalStart) > occStart){
+          state.events = state.events.filter(x=>x.id!==child.id);
+          window.fbSync.deleteEventRemote(child.id).catch(reportSyncError);
+        }
+      });
+      afterKidRefresh();
+      showToast('Afspraak en volgende herhalingen verwijderd');
+    });
+  } else {
+    confirmDialog('Deze hele reeks (alle herhalingen) verwijderen?', ()=>{
+      state.events = state.events.filter(x=>x.id!==ev.id);
+      window.fbSync.deleteEventRemote(ev.id).catch(reportSyncError);
+      seriesChildren(ev.id).forEach(child=>{
+        state.events = state.events.filter(x=>x.id!==child.id);
+        window.fbSync.deleteEventRemote(child.id).catch(reportSyncError);
+      });
+      afterKidRefresh();
+      showToast('Afspraak verwijderd');
+    });
+  }
 }
 
 
