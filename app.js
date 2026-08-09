@@ -1749,7 +1749,7 @@ if(requireParticipantCb){
     if(on){
       const n = countEventsWithoutParticipants();
       if(n>0){
-        alertDialog(`Vanaf nu is een deelnemer verplicht bij nieuwe of gewijzigde afspraken. Je hebt nog ${n} bestaande ${n===1?'afspraak':'afspraken'} zonder deelnemer — die ${n===1?'blijft':'blijven'} ongewijzigd. Gebruik de filter "Geen deelnemer" in de agenda om ${n===1?'m':'ze'} terug te vinden.`);
+        alertDialog(`Vanaf nu is een deelnemer verplicht bij nieuwe of gewijzigde afspraken. Je hebt nog ${n} bestaande ${n===1?'afspraak':'afspraken'} zonder deelnemer (herhalende afspraken tellen hierbij als 1) — die ${n===1?'blijft':'blijven'} ongewijzigd. Bekijk ${n===1?'m':'ze'} via de filter "Geen deelnemer" in de agenda.`);
       }
     }
   });
