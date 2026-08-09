@@ -582,7 +582,10 @@ function renderMonthGrid(){
         daycellsHtml += `<div class="month-overflow" style="grid-column:${c+1}; grid-row:${maxLanes+2};" data-date="${fmtISODate(day)}">+${hiddenCountByCol[c]}</div>`;
       }
     }
-    html += `<div class="month-week" style="--bar-h:15px; grid-template-rows:${dateRowH}px repeat(${maxLanes}, var(--bar-h)) auto;">${daycellsHtml}${barsHtml}</div>`;
+    // Laatste rij vult de resterende hoogte op (i.p.v. 'auto', wat op hoge schermen
+    // lege ruimte onderin de maandkalender liet staan); het "+N meer"-label blijft
+    // dankzij align-self:end (zie .month-overflow in styles.css) netjes onderaan hangen.
+    html += `<div class="month-week" style="--bar-h:15px; height:${Math.max(budgetPerWeek, dateRowH + maxLanes*barSlot)}px; grid-template-rows:${dateRowH}px repeat(${maxLanes}, var(--bar-h)) minmax(0,1fr);">${daycellsHtml}${barsHtml}</div>`;
   }
   html += '</div>';
   return html;
