@@ -547,7 +547,10 @@ function renderMonthGrid(){
   const availableForBars = budgetPerWeek - dateRowH - overflowReserve - weekPadding;
   const barSlot = 16; // 15px balkhoogte + 1px marge
   let maxLanes = Math.floor(availableForBars / barSlot);
-  maxLanes = Math.max(1, Math.min(maxLanes, 5));
+  // Schaalt mee met de beschikbare schermhoogte, zodat meer ruimte ook echt meer
+  // afspraken toont i.p.v. alleen witruimte. Ruime veiligheidsgrens (20) tegen
+  // rare uitschieters op extreem hoge schermen.
+  maxLanes = Math.max(1, Math.min(maxLanes, 20));
 
   let html = `<div class="month-grid"><div class="month-dow-row">`;
   DOW_SHORT.forEach((d,i)=>{ html += `<div class="month-dow">${DOW_LONG[(i+1)%7].slice(0,2)}</div>`; });
