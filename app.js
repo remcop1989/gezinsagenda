@@ -911,10 +911,6 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
         <div class="hint">Staat dit uit, dan zie je het pictogram bij het kind zowel in de week- als de dagweergave. Vink aan om het alleen op de dag zelf te tonen.</div>
       </div>
       <div class="field"><label>Pictogram</label>
-        <div class="picto-current-row">
-          <span class="picto-current-icon" id="picto-current-icon">${data.icon||'📅'}</span>
-          <span class="hint" style="margin:0;">Huidig gekozen pictogram voor deze afspraak.</span>
-        </div>
         <input type="text" id="ev-emoji-search" placeholder="Zoek een pictogram (bijv. 'zwem' of 'oma')...">
         <div class="picto-picker-box" id="ev-emoji-pick">${renderPictoPicker(data.icon)}</div><input type="hidden" id="f-icon" value="${data.icon}">
         <div class="picto-custom-add ${iconIsCustomOnce?'custom-active':''}" id="picto-custom-add">
@@ -1008,12 +1004,11 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
         <div class="hint">Bijlagen worden lokaal opgeslagen in je browser. Houd bestanden klein.</div>
       </div>
 
-      <div class="modal-actions">
-        <div>${isEdit?'<button type="button" class="btn btn-danger" id="btn-delete-event">Verwijderen</button>':''}</div>
-        <div class="modal-actions-buttons">
-          <button type="button" class="btn" id="btn-cancel-modal">Annuleren</button>
-          <button type="submit" class="btn btn-primary">Opslaan</button>
-        </div>
+      ${isEdit?'<div class="field delete-field"><button type="button" class="btn btn-danger" id="btn-delete-event">Verwijderen</button></div>':''}
+
+      <div class="modal-actions" style="justify-content:flex-end;">
+        <button type="button" class="btn" id="btn-cancel-modal">Annuleren</button>
+        <button type="submit" class="btn btn-primary">Opslaan</button>
       </div>
     </form>
   `;
@@ -1047,7 +1042,6 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
     document.querySelectorAll('#ev-emoji-pick .picto-btn').forEach(x=>x.classList.remove('sel'));
     b.classList.add('sel');
     document.getElementById('f-icon').value = b.dataset.em;
-    document.getElementById('picto-current-icon').textContent = b.dataset.em;
     document.getElementById('picto-custom-add').classList.remove('custom-active');
     document.getElementById('ev-custom-icon').value = '';
     const titleInput = document.getElementById('f-title');
@@ -1080,7 +1074,8 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
     const customBox = document.getElementById('picto-custom-add');
     const icon = iconInput.value.trim();
     if(!icon){ iconInput.focus(); return; }
-    const label = labelInput.value.trim() || icon;
+    const typedLabel = labelInput.value.trim();
+    const label = typedLabel || icon; // fallback alleen voor de opslag-lijst (customPictos), niet voor titel/kindtekst
     if(persist){
       const list = ((state.settings && state.settings.customPictos) || []).slice();
       if(!list.some(c=>c.icon===icon)) list.push({icon, label});
@@ -1091,17 +1086,21 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
       iconInput.value = '';
     } else {
       // Blijft (i.p.v. geleegd te worden) zichtbaar in het invoerveld, met een geaccentueerde
-      // rand om het vak: dit is nu duidelijk de actieve bron van het eenmalige pictogram.
+      // rand om het vak: dit is nu de enige, duidelijke plek die toont wat het actieve,
+      // eenmalige pictogram is.
       document.querySelectorAll('#ev-emoji-pick .picto-btn').forEach(x=>x.classList.remove('sel'));
       customBox.classList.add('custom-active');
       iconInput.value = icon;
     }
     document.getElementById('f-icon').value = icon;
-    document.getElementById('picto-current-icon').textContent = icon;
     const titleInput = document.getElementById('f-title');
     const kindInput = document.getElementById('f-kindtekst');
-    if(!titleInput.value.trim()) titleInput.value = label;
-    if(!kindInput.value.trim()) kindInput.value = label;
+    // Alleen overnemen als er ook echt een naam is getypt — anders belandt het emoji-teken
+    // zelf als tekst in de titel, wat geen leesbare titel oplevert.
+    if(typedLabel){
+      if(!titleInput.value.trim()) titleInput.value = typedLabel;
+      if(!kindInput.value.trim()) kindInput.value = typedLabel;
+    }
     labelInput.value = '';
   }
   document.getElementById('btn-custom-once').addEventListener('click', ()=> useCustomIcon(false));

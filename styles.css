@@ -101,12 +101,13 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 /* Deze twee groepen worden elk als één flex-item behandeld door .agenda-toolbar, zodat ze bij
    plaatsgebrek als geheel naar een nieuwe regel wrappen i.p.v. dat losse knoppen/label los uit
    elkaar vallen (bijv. "‹ Vandaag ›" los van een lange datumtekst als "Maandag 17 augustus"). */
-.agenda-nav{display:flex; align-items:center; gap:8px; flex-wrap:nowrap; min-width:0;}
+.agenda-nav{display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0;}
+.agenda-nav-btns{display:flex; align-items:center; gap:8px; flex:0 0 auto;}
 .agenda-controls{display:flex; align-items:center; gap:8px; flex:1 1 auto; min-width:0;}
 .view-switch{display:flex; background:var(--paper-sunk); border-radius:999px; padding:3px; gap:2px;}
 .view-switch button{border:none; background:transparent; padding:6px 12px; border-radius:999px; font-weight:600; font-size:12.5px; color:var(--ink-soft);}
 .view-switch button.active{background:var(--paper-raised); color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.15);}
-.range-label{font-family:var(--font-display); font-weight:700; font-size:16px; margin:0 4px; min-width:0;}
+.range-label{font-family:var(--font-display); font-weight:700; font-size:16px; margin:0 4px; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:0 1 auto;}
 .spacer{flex:1;}
 .member-filters{display:flex; gap:5px; flex-wrap:wrap; margin-bottom:8px;}
 .chip{
@@ -336,12 +337,6 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 .picto-btn .l{font-size:9px; font-weight:600; color:var(--ink-soft); text-align:center; line-height:1.1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:56px;}
 .picto-btn.sel{border-color:var(--ink); background:var(--paper-sunk);}
 .picto-picker-box{max-height:340px; overflow-y:auto; border:1px solid var(--line); border-radius:10px; padding:8px; background:var(--paper);}
-.picto-current-row{display:flex; align-items:center; gap:10px; margin-bottom:8px;}
-.picto-current-icon{
-  font-size:26px; line-height:1; width:44px; height:44px; flex:0 0 auto;
-  display:flex; align-items:center; justify-content:center;
-  background:var(--paper-sunk); border:1.5px solid var(--line); border-radius:10px;
-}
 .picto-custom-add{margin-top:8px; padding:8px; border:1px dashed var(--line); border-radius:10px; display:flex; flex-direction:column; gap:6px;}
 .picto-custom-add input{width:100%; box-sizing:border-box;}
 /* Markeert het "eigen pictogram"-vak als de actieve bron zolang het huidige pictogram een
@@ -390,6 +385,7 @@ input,select,textarea{font-family:inherit; font-size:14px;}
   background:var(--paper-raised); border-top:1px solid var(--paper-sunk); border-radius:0 0 16px 16px;
 }
 .modal-actions-buttons{display:flex; gap:8px;}
+.delete-field{margin-top:20px; padding-top:14px; border-top:1px solid var(--paper-sunk);}
 .attach-list{display:flex; flex-direction:column; gap:6px; margin-top:6px;}
 .attach-row{display:flex; align-items:center; gap:8px; background:var(--paper-sunk); border-radius:8px; padding:6px 8px; font-size:12.5px;}
 .attach-row a{color:var(--accent-2-ink); text-decoration:none; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
@@ -428,8 +424,7 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 .hh-gate-error{color:var(--danger); font-size:13px; margin-top:-4px; margin-bottom:10px;}
 
 @media (max-width: 720px){
-  .row2,.row3{grid-template-columns:1fr;}
-  .range-label{min-width:0;}
+  .row2,.row3{grid-template-columns:minmax(0,1fr);}
   .lists-nav-wrap{width:100%; flex:1 1 100%;}
   .lists-nav{flex-direction:row; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:4px; padding-right:34px;}
   .list-nav-btn{flex:0 0 auto; white-space:nowrap;}
