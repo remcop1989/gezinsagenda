@@ -390,12 +390,13 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 @keyframes modalin{from{opacity:0; transform:translateY(10px) scale(.98);} to{opacity:1; transform:none;}}
 .modal-head{display:flex; align-items:center; margin-bottom:14px;}
 .modal-head h2{margin:0; font-size:19px;}
-/* Sticky onderaan i.p.v. helemaal onderaan de (soms lange) formulierscroll: de negatieve
-   margin/padding-truc laat de balk edge-to-edge over de modal-breedte lopen en precies aansluiten
-   op de afgeronde onderhoek, ook als de balk niet 'vast' hoeft te zitten (kort formulier). */
+/* Basis: normale flow-positie onderaan het formulier (geen sticky). De negatieve margin-truc
+   laat de balk edge-to-edge over de modal-breedte lopen en aansluiten op de afgeronde onderhoek.
+   Sticky-gedrag wordt hieronder alleen toegevoegd op mobiele breedtes (max-width:720px) — op
+   laptop/desktop is er meestal genoeg viewporthoogte om het hele formulier te overzien, dus daar
+   staan de knoppen gewoon onderaan, net als de rest van het formulier. */
 .modal-actions{
   display:flex; justify-content:space-between; gap:8px;
-  position:sticky; bottom:0; z-index:5;
   margin:16px -22px -22px; padding:14px 22px;
   background:var(--paper-raised); border-top:1px solid var(--paper-sunk); border-radius:0 0 16px 16px;
 }
@@ -443,10 +444,11 @@ input,select,textarea{font-family:inherit; font-size:14px;}
      30px boven de fysieke onderkant van het scherm zweven, met een stukje formulier zichtbaar
      erachter/eronder. bottom:-30px heft die padding specifiek voor de balk op zodat hij écht tot
      de onderkant reikt; padding-bottom met env(safe-area-inset-bottom) houdt de knoppen zelf op
-     veilige afstand van de fysieke rand/home-indicator. Alleen op mobiel: op grotere schermen is
-     er toch al ruimte genoeg en blijft de balk gewoon los van de rand staan. */
+     veilige afstand van de fysieke rand/home-indicator. position:sticky staat hier (en dus
+     alleen op mobiel) omdat dat op kleine schermen het meeste scrollen scheelt; op grotere
+     schermen (buiten deze media query) staat de balk gewoon in de normale flow onderaan. */
   .modal-actions{
-    bottom:-30px;
+    position:sticky; bottom:-30px; z-index:5;
     padding-bottom:max(14px, env(safe-area-inset-bottom));
     border-radius:0;
   }
