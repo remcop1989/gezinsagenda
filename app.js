@@ -922,7 +922,7 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
         <div class="picto-picker-box" id="ev-emoji-pick">${renderPictoPicker(data.icon)}</div><input type="hidden" id="f-icon" value="${data.icon}">
         <div class="picto-custom-add ${iconIsCustomOnce?'custom-active':''}" id="picto-custom-add">
           <input type="text" id="ev-custom-icon" maxlength="20" placeholder="Eigen pictogram (bijv. 🦖)" value="${iconIsCustomOnce?escapeHtml(data.icon):''}">
-          <input type="text" id="ev-custom-label" placeholder="Naam (optioneel)">
+          <input type="text" id="ev-custom-label" placeholder="Naam (optioneel)" value="${iconIsCustomOnce?escapeHtml(data.iconLabel||''):''}">
           <div class="picto-custom-actions">
             <button type="button" class="btn btn-sm" id="btn-custom-once">Eenmalig gebruiken</button>
             <button type="button" class="btn btn-sm" id="btn-custom-save">Bewaren &amp; gebruiken</button>
@@ -1052,6 +1052,7 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
     document.getElementById('f-icon').value = b.dataset.em;
     document.getElementById('picto-custom-add').classList.remove('custom-active');
     document.getElementById('ev-custom-icon').value = '';
+    document.getElementById('ev-custom-label').value = '';
     const titleInput = document.getElementById('f-title');
     const kindInput = document.getElementById('f-kindtekst');
     if(!titleInput.value.trim()) titleInput.value = b.dataset.label;
@@ -1280,6 +1281,7 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
       kindTekst: document.getElementById('f-kindtekst').value.trim(),
       onlyDayView: document.getElementById('f-only-dayview').checked,
       icon: document.getElementById('f-icon').value || '📅',
+      iconLabel: document.getElementById('ev-custom-label').value.trim(),
       start: startDT.toISOString(),
       end: endDT.toISOString(),
       location: document.getElementById('f-location').value.trim(),
