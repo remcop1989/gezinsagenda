@@ -101,13 +101,22 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 /* Deze twee groepen worden elk als één flex-item behandeld door .agenda-toolbar, zodat ze bij
    plaatsgebrek als geheel naar een nieuwe regel wrappen i.p.v. dat losse knoppen/label los uit
    elkaar vallen (bijv. "‹ Vandaag ›" los van een lange datumtekst als "Maandag 17 augustus"). */
-.agenda-nav{display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0;}
+.agenda-nav{display:flex; align-items:center; gap:8px; flex-wrap:nowrap; min-width:0;}
 .agenda-nav-btns{display:flex; align-items:center; gap:8px; flex:0 0 auto;}
 .agenda-controls{display:flex; align-items:center; gap:8px; flex:1 1 auto; min-width:0;}
 .view-switch{display:flex; background:var(--paper-sunk); border-radius:999px; padding:3px; gap:2px;}
 .view-switch button{border:none; background:transparent; padding:6px 12px; border-radius:999px; font-weight:600; font-size:12.5px; color:var(--ink-soft);}
 .view-switch button.active{background:var(--paper-raised); color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.15);}
-.range-label{font-family:var(--font-display); font-weight:700; font-size:16px; margin:0 4px; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:0 1 auto;}
+/* Vaste 2-regelige kolom (hoofdtekst + jaartal) i.p.v. losse tekstregel: voorkomt dat het label
+   soms 1 en soms 2 regels inneemt, wat de toolbar-hoogte zou laten verspringen. De hoofdtekst
+   knipt af met "…" in het (zeldzame) geval dat zelfs die ene regel niet past — dat verandert
+   nooit de hoogte, alleen de zichtbare breedte. */
+.range-label{
+  display:flex; flex-direction:column; justify-content:center;
+  font-family:var(--font-display); font-weight:700; margin:0 4px; min-width:0; flex:1 1 auto;
+}
+.range-label-main{font-size:16px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.range-label-year{font-size:12px; line-height:1.2; opacity:.65; align-self:flex-end; white-space:nowrap;}
 .spacer{flex:1;}
 .member-filters{display:flex; gap:5px; flex-wrap:wrap; margin-bottom:8px;}
 .chip{
@@ -348,8 +357,14 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 .field{margin-bottom:13px;}
 .field label{display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:4px;}
 .field input[type=text], .field input[type=date], .field input[type=time], .field input[type=number], .field select, .field textarea{
-  width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:8px; background:var(--paper);
+  width:100%; max-width:100%; min-width:0; padding:9px 10px; border:1px solid var(--line); border-radius:8px; background:var(--paper);
 }
+/* Native date/time-invoervelden op iOS Safari negeren width:100%/box-sizing soms gedeeltelijk
+   (bekende WebKit-eigenaardigheid), waardoor ze zichtbaar breder renderden dan andere velden.
+   appearance:none dwingt het standaard CSS-boxmodel af; min-width:0 op de grid-items zelf
+   voorkomt dat de kolom alsnog oprekt door de intrinsieke inhoudsbreedte van het native widget. */
+.field input[type=date], .field input[type=time]{ -webkit-appearance:none; appearance:none; }
+.row2 > .field, .row3 > .field{min-width:0;}
 .field textarea{min-height:60px; resize:vertical;}
 /* minmax(0,1fr) i.p.v. kale 1fr: zonder dit respecteert een grid-kolom niet de opgegeven breedte
    zodra een kind een grotere intrinsieke minimumbreedte heeft (zoals native date/time-inputs),
@@ -385,7 +400,6 @@ input,select,textarea{font-family:inherit; font-size:14px;}
   background:var(--paper-raised); border-top:1px solid var(--paper-sunk); border-radius:0 0 16px 16px;
 }
 .modal-actions-buttons{display:flex; gap:8px;}
-.delete-field{margin-top:20px; padding-top:14px; border-top:1px solid var(--paper-sunk);}
 .attach-list{display:flex; flex-direction:column; gap:6px; margin-top:6px;}
 .attach-row{display:flex; align-items:center; gap:8px; background:var(--paper-sunk); border-radius:8px; padding:6px 8px; font-size:12.5px;}
 .attach-row a{color:var(--accent-2-ink); text-decoration:none; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
@@ -425,6 +439,17 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 
 @media (max-width: 720px){
   .row2,.row3{grid-template-columns:minmax(0,1fr);}
+  /* .modal-overlay heeft 30px eigen padding rondom; daardoor bleef de sticky knoppenbalk altijd
+     30px boven de fysieke onderkant van het scherm zweven, met een stukje formulier zichtbaar
+     erachter/eronder. bottom:-30px heft die padding specifiek voor de balk op zodat hij écht tot
+     de onderkant reikt; padding-bottom met env(safe-area-inset-bottom) houdt de knoppen zelf op
+     veilige afstand van de fysieke rand/home-indicator. Alleen op mobiel: op grotere schermen is
+     er toch al ruimte genoeg en blijft de balk gewoon los van de rand staan. */
+  .modal-actions{
+    bottom:-30px;
+    padding-bottom:max(14px, env(safe-area-inset-bottom));
+    border-radius:0;
+  }
   .lists-nav-wrap{width:100%; flex:1 1 100%;}
   .lists-nav{flex-direction:row; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:4px; padding-right:34px;}
   .list-nav-btn{flex:0 0 auto; white-space:nowrap;}

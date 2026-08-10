@@ -517,18 +517,25 @@ function renderAgenda(){
   renderMemberFilters();
   const label = document.getElementById('agenda-range-label');
   const body = document.getElementById('agenda-body');
+  // Het jaartal staat altijd op een vaste, eigen regel onder de rest van de datumtekst — ook als
+  // alles samen op één regel zou passen. Zo heeft het label altijd exact dezelfde hoogte (2
+  // regels), wat voorkomt dat de toolbar (en alles eronder) van hoogte verspringt wanneer je
+  // navigeert of van weergave wisselt.
+  function setRangeLabel(main, year){
+    label.innerHTML = `<span class="range-label-main">${escapeHtml(main)}</span><span class="range-label-year">${year}</span>`;
+  }
   if(agendaView==='month'){
-    label.textContent = MONTHS[agendaDate.getMonth()] + ' ' + agendaDate.getFullYear();
+    setRangeLabel(MONTHS[agendaDate.getMonth()], agendaDate.getFullYear());
     body.innerHTML = renderMonthGrid();
     attachMonthHandlers();
   } else if(agendaView==='week'){
     const mon = getMonday(agendaDate);
     const sun = addDays(mon,6);
-    label.textContent = mon.getDate()+' '+(mon.getMonth()!==sun.getMonth()?MONTHS[mon.getMonth()].slice(0,3)+' ':'')+'– '+sun.getDate()+' '+MONTHS[sun.getMonth()]+' '+sun.getFullYear();
+    setRangeLabel(mon.getDate()+' '+(mon.getMonth()!==sun.getMonth()?MONTHS[mon.getMonth()].slice(0,3)+' ':'')+'– '+sun.getDate()+' '+MONTHS[sun.getMonth()], sun.getFullYear());
     body.innerHTML = renderTimeGrid(mon, 7);
     attachTimeGridHandlers();
   } else {
-    label.textContent = DOW_LONG[agendaDate.getDay()].replace(/^./,c=>c.toUpperCase())+' '+agendaDate.getDate()+' '+MONTHS[agendaDate.getMonth()]+' '+agendaDate.getFullYear();
+    setRangeLabel(DOW_LONG[agendaDate.getDay()].replace(/^./,c=>c.toUpperCase())+' '+agendaDate.getDate()+' '+MONTHS[agendaDate.getMonth()], agendaDate.getFullYear());
     body.innerHTML = renderTimeGrid(startOfDay(agendaDate), 1);
     attachTimeGridHandlers();
   }
@@ -1004,11 +1011,12 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
         <div class="hint">Bijlagen worden lokaal opgeslagen in je browser. Houd bestanden klein.</div>
       </div>
 
-      ${isEdit?'<div class="field delete-field"><button type="button" class="btn btn-danger" id="btn-delete-event">Verwijderen</button></div>':''}
-
-      <div class="modal-actions" style="justify-content:flex-end;">
-        <button type="button" class="btn" id="btn-cancel-modal">Annuleren</button>
-        <button type="submit" class="btn btn-primary">Opslaan</button>
+      <div class="modal-actions">
+        <div>${isEdit?'<button type="button" class="btn btn-danger" id="btn-delete-event">Verwijderen</button>':''}</div>
+        <div class="modal-actions-buttons">
+          <button type="button" class="btn" id="btn-cancel-modal">Annuleren</button>
+          <button type="submit" class="btn btn-primary">Opslaan</button>
+        </div>
       </div>
     </form>
   `;
@@ -1084,24 +1092,23 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
       document.getElementById('ev-emoji-pick').innerHTML = renderPictoPicker(icon);
       customBox.classList.remove('custom-active');
       iconInput.value = '';
+      labelInput.value = '';
     } else {
-      // Blijft (i.p.v. geleegd te worden) zichtbaar in het invoerveld, met een geaccentueerde
-      // rand om het vak: dit is nu de enige, duidelijke plek die toont wat het actieve,
-      // eenmalige pictogram is.
+      // Icoon én naam blijven zichtbaar staan (i.p.v. geleegd te worden), met een geaccentueerde
+      // rand om het vak: dit is de enige, duidelijke plek die toont wat het actieve, eenmalige
+      // pictogram + naam is — ook nadat je hem net hebt gebruikt of aangepast.
       document.querySelectorAll('#ev-emoji-pick .picto-btn').forEach(x=>x.classList.remove('sel'));
       customBox.classList.add('custom-active');
       iconInput.value = icon;
     }
     document.getElementById('f-icon').value = icon;
-    const titleInput = document.getElementById('f-title');
-    const kindInput = document.getElementById('f-kindtekst');
-    // Alleen overnemen als er ook echt een naam is getypt — anders belandt het emoji-teken
-    // zelf als tekst in de titel, wat geen leesbare titel oplevert.
+    // De getypte naam wordt altijd doorgezet naar titel + korte tekst kindweergave — ook als je
+    // een bestaande afspraak aanpast en die velden al een waarde hebben. Zonder getypte naam
+    // blijven titel/kindtekst ongemoeid (anders belandt het emoji-teken zelf als tekst daarin).
     if(typedLabel){
-      if(!titleInput.value.trim()) titleInput.value = typedLabel;
-      if(!kindInput.value.trim()) kindInput.value = typedLabel;
+      document.getElementById('f-title').value = typedLabel;
+      document.getElementById('f-kindtekst').value = typedLabel;
     }
-    labelInput.value = '';
   }
   document.getElementById('btn-custom-once').addEventListener('click', ()=> useCustomIcon(false));
   document.getElementById('btn-custom-save').addEventListener('click', ()=> useCustomIcon(true));
