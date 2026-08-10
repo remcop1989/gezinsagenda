@@ -704,12 +704,10 @@ function renderTimeGrid(startDate, numDays){
       const top = (startMin/60)*hourPx;
       const height = (durMin/60)*hourPx - 2;
       const c = eventColor(o.event);
-      const members = (o.event.participants||[]).map(id=>memberById(id)).filter(Boolean).map(m=>m.icon).join('');
       const widthPct = 100/o.totalCols;
       const leftPct = o.col*widthPct;
-      blocks += `<div class="event-block" style="top:${top}px; height:${Math.max(height,16)}px; left:calc(${leftPct}% + 2px); width:calc(${widthPct}% - 4px); background:${c};" data-eid="${o.event.id}" data-occstart="${o.occStart.toISOString()}"
-        <span class="t">${fmtTimeHM(o.occStart)}–${fmtTimeHM(o.occEnd)} ${members}${hiddenKidBadge(o.event)}</span>
-        <span class="ttl">${escapeHtml(o.event.title)}</span>
+      blocks += `<div class="event-block" style="top:${top}px; height:${Math.max(height,16)}px; left:calc(${leftPct}% + 2px); width:calc(${widthPct}% - 4px); background:${c};" data-eid="${o.event.id}" data-occstart="${o.occStart.toISOString()}">
+        <span class="ttl-row"><span class="ttl">${escapeHtml(o.event.title)}</span>${hiddenKidBadge(o.event)}</span>
         ${o.event.location?`<span class="loc">📍 ${escapeHtml(o.event.location)}</span>`:''}
       </div>`;
     });
@@ -726,7 +724,7 @@ function renderTimeGrid(startDate, numDays){
       const maxShow = 1;
       let pillsHtml = dayAllDay.slice(0,maxShow).map(o=>{
         const c = eventColor(o.event);
-        return `<div class="pill" style="background:${c}" data-eid="${o.event.id}" data-occstart="${o.occStart.toISOString()}" title="${escapeHtml(o.event.title)}">${o.event.icon||'📅'} ${escapeHtml(o.event.title)}${hiddenKidBadge(o.event)}</div>`;
+        return `<div class="pill" style="background:${c}" data-eid="${o.event.id}" data-occstart="${o.occStart.toISOString()}" title="${escapeHtml(o.event.title)}"><span class="pill-ttl">${o.event.icon||'📅'} ${escapeHtml(o.event.title)}</span>${hiddenKidBadge(o.event)}</div>`;
       }).join('');
       if(dayAllDay.length>maxShow) pillsHtml += `<div class="pill-more">+${dayAllDay.length-maxShow}</div>`;
       alldayRow = `<div class="time-col-allday">${pillsHtml}</div>`;
@@ -765,17 +763,15 @@ function attachTimeGridHandlers(){
    het laatste stukje wegsnijden. */
 function autofitEventBlocks(){
   const MIN_SCALE = 0.38, STEP = 0.05;
-  const BASE = { ttl: 11.5, t: 10, loc: 10 };
+  const BASE = { ttl: 11.5, loc: 10 };
   document.querySelectorAll('.event-block').forEach(block=>{
     const ttl = block.querySelector('.ttl');
-    const t = block.querySelector('.t');
     const loc = block.querySelector('.loc');
     let scale = 1;
     let guard = 0;
     while(block.scrollHeight > block.clientHeight + 1 && scale > MIN_SCALE && guard < 16){
       scale -= STEP;
       if(ttl) ttl.style.fontSize = (BASE.ttl*scale).toFixed(1)+'px';
-      if(t) t.style.fontSize = (BASE.t*scale).toFixed(1)+'px';
       if(loc) loc.style.fontSize = (BASE.loc*scale).toFixed(1)+'px';
       guard++;
     }
@@ -897,6 +893,15 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
 
   const scopeTitles = {single:'Alleen deze afspraak bewerken', future:'Deze en alle volgende bewerken', all:'Afspraak bewerken'};
   const headTitle = !isEdit ? 'Nieuwe afspraak' : (occCtx ? (scopeTitles[editScope]||'Afspraak bewerken') : 'Afspraak bewerken');
+
+  // Bepaalt of het huidige pictogram nergens in de kiezer-grid voorkomt (dus een eenmalig, niet-
+  // bewaard eigen pictogram is), zodat we dat bij het openen meteen zichtbaar en gemarkeerd tonen
+  // i.p.v. dat de gebruiker alleen aan een verborgen hidden-input kan zien wat er actief staat.
+  const knownPictoIcons = new Set(
+    PICTO_CATEGORIES.flatMap(c=>c.items.map(([em])=>em))
+      .concat(((state.settings && state.settings.customPictos) || []).map(c=>c.icon))
+  );
+  const iconIsCustomOnce = !!data.icon && !knownPictoIcons.has(data.icon);
   document.getElementById('modal-content').innerHTML = `
     <div class="modal-head"><h2>${headTitle}</h2></div>
     <form id="event-form">
@@ -906,16 +911,20 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
         <div class="hint">Staat dit uit, dan zie je het pictogram bij het kind zowel in de week- als de dagweergave. Vink aan om het alleen op de dag zelf te tonen.</div>
       </div>
       <div class="field"><label>Pictogram</label>
+        <div class="picto-current-row">
+          <span class="picto-current-icon" id="picto-current-icon">${data.icon||'📅'}</span>
+          <span class="hint" style="margin:0;">Huidig gekozen pictogram voor deze afspraak.</span>
+        </div>
         <input type="text" id="ev-emoji-search" placeholder="Zoek een pictogram (bijv. 'zwem' of 'oma')...">
         <div class="picto-picker-box" id="ev-emoji-pick">${renderPictoPicker(data.icon)}</div><input type="hidden" id="f-icon" value="${data.icon}">
-        <div class="picto-custom-add">
-          <input type="text" id="ev-custom-icon" maxlength="20" placeholder="Eigen pictogram (bijv. 🦖)">
+        <div class="picto-custom-add ${iconIsCustomOnce?'custom-active':''}" id="picto-custom-add">
+          <input type="text" id="ev-custom-icon" maxlength="20" placeholder="Eigen pictogram (bijv. 🦖)" value="${iconIsCustomOnce?escapeHtml(data.icon):''}">
           <input type="text" id="ev-custom-label" placeholder="Naam (optioneel)">
           <div class="picto-custom-actions">
             <button type="button" class="btn btn-sm" id="btn-custom-once">Eenmalig gebruiken</button>
             <button type="button" class="btn btn-sm" id="btn-custom-save">Bewaren &amp; gebruiken</button>
           </div>
-          <div class="hint">Typ, plak of kies hier een pictogram vanaf je toetsenbord (op een telefoon: het emoji-toetsenbord; op een computer meestal met Windows-toets + punt, of op Mac via Ctrl+Cmd+Spatie). "Eenmalig" gebruikt het alleen voor deze afspraak; "Bewaren" zet het ook bij je eigen pictogrammen hierboven, voor volgende keer.</div>
+          <div class="hint">Typ, plak of kies hier een pictogram vanaf je toetsenbord (op een telefoon: het emoji-toetsenbord; op een computer meestal met Windows-toets + punt, of op Mac via Ctrl+Cmd+Spatie). "Eenmalig" gebruikt het alleen voor deze afspraak; "Bewaren" zet het ook bij je eigen pictogrammen hierboven, voor volgende keer.${iconIsCustomOnce?' <strong>Dit is nu het actieve, eenmalige pictogram.</strong>':''}</div>
         </div>
       </div>
       <div class="field"><label class="check-pill check-pill--inline"><input type="checkbox" id="f-allday" ${data.allDay?'checked':''}> Hele dag (geen specifieke tijd)</label></div>
@@ -1038,6 +1047,9 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
     document.querySelectorAll('#ev-emoji-pick .picto-btn').forEach(x=>x.classList.remove('sel'));
     b.classList.add('sel');
     document.getElementById('f-icon').value = b.dataset.em;
+    document.getElementById('picto-current-icon').textContent = b.dataset.em;
+    document.getElementById('picto-custom-add').classList.remove('custom-active');
+    document.getElementById('ev-custom-icon').value = '';
     const titleInput = document.getElementById('f-title');
     const kindInput = document.getElementById('f-kindtekst');
     if(!titleInput.value.trim()) titleInput.value = b.dataset.label;
@@ -1065,6 +1077,7 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
   function useCustomIcon(persist){
     const iconInput = document.getElementById('ev-custom-icon');
     const labelInput = document.getElementById('ev-custom-label');
+    const customBox = document.getElementById('picto-custom-add');
     const icon = iconInput.value.trim();
     if(!icon){ iconInput.focus(); return; }
     const label = labelInput.value.trim() || icon;
@@ -1074,15 +1087,22 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
       state.settings = Object.assign({}, state.settings, {customPictos:list});
       window.fbSync.syncSettings(state.settings).catch(reportSyncError);
       document.getElementById('ev-emoji-pick').innerHTML = renderPictoPicker(icon);
+      customBox.classList.remove('custom-active');
+      iconInput.value = '';
     } else {
+      // Blijft (i.p.v. geleegd te worden) zichtbaar in het invoerveld, met een geaccentueerde
+      // rand om het vak: dit is nu duidelijk de actieve bron van het eenmalige pictogram.
       document.querySelectorAll('#ev-emoji-pick .picto-btn').forEach(x=>x.classList.remove('sel'));
+      customBox.classList.add('custom-active');
+      iconInput.value = icon;
     }
     document.getElementById('f-icon').value = icon;
+    document.getElementById('picto-current-icon').textContent = icon;
     const titleInput = document.getElementById('f-title');
     const kindInput = document.getElementById('f-kindtekst');
     if(!titleInput.value.trim()) titleInput.value = label;
     if(!kindInput.value.trim()) kindInput.value = label;
-    iconInput.value = ''; labelInput.value = '';
+    labelInput.value = '';
   }
   document.getElementById('btn-custom-once').addEventListener('click', ()=> useCustomIcon(false));
   document.getElementById('btn-custom-save').addEventListener('click', ()=> useCustomIcon(true));

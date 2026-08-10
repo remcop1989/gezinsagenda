@@ -33,17 +33,21 @@
   <!-- AGENDA -->
   <section class="panel active" id="panel-agenda">
     <div class="agenda-toolbar">
-      <button class="icon-btn" id="agenda-prev">‹</button>
-      <button class="btn btn-sm" id="agenda-today">Vandaag</button>
-      <button class="icon-btn" id="agenda-next">›</button>
-      <div class="range-label" id="agenda-range-label"></div>
-      <div class="view-switch" id="agenda-view-switch">
-        <button data-view="month" class="active">Maand</button>
-        <button data-view="week">Week</button>
-        <button data-view="day">Dag</button>
+      <div class="agenda-nav">
+        <button class="icon-btn" id="agenda-prev">‹</button>
+        <button class="btn btn-sm" id="agenda-today">Vandaag</button>
+        <button class="icon-btn" id="agenda-next">›</button>
+        <div class="range-label" id="agenda-range-label"></div>
       </div>
-      <div class="spacer"></div>
-      <button class="btn btn-accent" id="btn-new-event">+ Afspraak</button>
+      <div class="agenda-controls">
+        <div class="view-switch" id="agenda-view-switch">
+          <button data-view="month" class="active">Maand</button>
+          <button data-view="week">Week</button>
+          <button data-view="day">Dag</button>
+        </div>
+        <div class="spacer"></div>
+        <button class="btn btn-accent" id="btn-new-event">+ Afspraak</button>
+      </div>
     </div>
     <div class="member-filters" id="agenda-member-filters"></div>
     <div id="agenda-body"></div>

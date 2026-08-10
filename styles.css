@@ -98,6 +98,11 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 .agenda-toolbar{
   display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px;
 }
+/* Deze twee groepen worden elk als één flex-item behandeld door .agenda-toolbar, zodat ze bij
+   plaatsgebrek als geheel naar een nieuwe regel wrappen i.p.v. dat losse knoppen/label los uit
+   elkaar vallen (bijv. "‹ Vandaag ›" los van een lange datumtekst als "Maandag 17 augustus"). */
+.agenda-nav{display:flex; align-items:center; gap:8px; flex-wrap:nowrap; min-width:0;}
+.agenda-controls{display:flex; align-items:center; gap:8px; flex:1 1 auto; min-width:0;}
 .view-switch{display:flex; background:var(--paper-sunk); border-radius:999px; padding:3px; gap:2px;}
 .view-switch button{border:none; background:transparent; padding:6px 12px; border-radius:999px; font-weight:600; font-size:12.5px; color:var(--ink-soft);}
 .view-switch button.active{background:var(--paper-raised); color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.15);}
@@ -145,9 +150,11 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 
 /* Herbruikt door de hele-dag-strook in de week/dagweergave */
 .pill{
+  display:flex; align-items:center; gap:3px;
   font-size:9.5px; padding:1px 5px; border-radius:5px; font-weight:600; color:#fff;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:left; flex:0 0 auto;
+  text-align:left; flex:0 0 auto; max-width:100%; overflow:hidden;
 }
+.pill-ttl{min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .pill-more{font-size:9px; color:var(--ink-soft); font-weight:600; padding-left:4px;}
 
 
@@ -179,10 +186,12 @@ input,select,textarea{font-family:inherit; font-size:14px;}
   color:#fff; font-size:11.5px; font-weight:600; line-height:1.25; box-shadow:0 1px 3px rgba(0,0,0,.2); cursor:pointer; z-index:2;
   box-sizing:border-box;
 }
-.event-block .t{font-family:var(--font-mono); font-weight:600; font-size:10px; opacity:.9; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .event-block .loc{font-weight:500; opacity:.9; font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block;}
-.event-block .ttl{display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-.kid-hidden-badge{font-size:9px; opacity:.85; margin-left:2px;}
+/* .ttl-row houdt titel + 🙈-badge samen op één regel: de titel krimpt/knipt af (ellipsis),
+   de badge krijgt flex:0 0 auto zodat die nooit meekrimpt of wordt afgesneden. */
+.event-block .ttl-row{display:flex; align-items:center; gap:3px; min-width:0;}
+.event-block .ttl{display:block; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.kid-hidden-badge{font-size:9px; opacity:.85; margin-left:2px; flex:0 0 auto;}
 .gutter-corner-spacer{position:sticky; top:0; z-index:8; background:var(--paper-raised); -webkit-transform:translateZ(0); transform:translateZ(0);}
 .gutter-allday-spacer{height:26px; border-bottom:1px solid var(--line); position:sticky; top:57px; z-index:8; background:var(--paper-raised); -webkit-transform:translateZ(0); transform:translateZ(0);}
 .time-col-allday{
@@ -327,8 +336,17 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 .picto-btn .l{font-size:9px; font-weight:600; color:var(--ink-soft); text-align:center; line-height:1.1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:56px;}
 .picto-btn.sel{border-color:var(--ink); background:var(--paper-sunk);}
 .picto-picker-box{max-height:340px; overflow-y:auto; border:1px solid var(--line); border-radius:10px; padding:8px; background:var(--paper);}
+.picto-current-row{display:flex; align-items:center; gap:10px; margin-bottom:8px;}
+.picto-current-icon{
+  font-size:26px; line-height:1; width:44px; height:44px; flex:0 0 auto;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--paper-sunk); border:1.5px solid var(--line); border-radius:10px;
+}
 .picto-custom-add{margin-top:8px; padding:8px; border:1px dashed var(--line); border-radius:10px; display:flex; flex-direction:column; gap:6px;}
 .picto-custom-add input{width:100%; box-sizing:border-box;}
+/* Markeert het "eigen pictogram"-vak als de actieve bron zolang het huidige pictogram een
+   eenmalige (niet-bewaarde) keuze is die nergens anders in de kiezer als geselecteerd te zien is. */
+.picto-custom-add.custom-active{border-style:solid; border-color:var(--accent-2); background:var(--paper-sunk);}
 .picto-custom-actions{display:flex; gap:6px; flex-wrap:wrap;}
 
 /* ---------- Form / modal ---------- */
@@ -338,8 +356,11 @@ input,select,textarea{font-family:inherit; font-size:14px;}
   width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:8px; background:var(--paper);
 }
 .field textarea{min-height:60px; resize:vertical;}
-.row2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
-.row3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;}
+/* minmax(0,1fr) i.p.v. kale 1fr: zonder dit respecteert een grid-kolom niet de opgegeven breedte
+   zodra een kind een grotere intrinsieke minimumbreedte heeft (zoals native date/time-inputs),
+   waardoor die kolom (en dus het veld) breder werd dan de rest van het formulier. */
+.row2{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px;}
+.row3{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr); gap:10px;}
 .check-grid{display:flex; flex-wrap:wrap; gap:8px;}
 .check-pill{display:flex; align-items:center; gap:6px; border:1.5px solid var(--line); border-radius:999px; padding:6px 12px 6px 8px; font-size:13px; font-weight:600;}
 .check-pill--inline{display:inline-flex;}
@@ -359,7 +380,15 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 @keyframes modalin{from{opacity:0; transform:translateY(10px) scale(.98);} to{opacity:1; transform:none;}}
 .modal-head{display:flex; align-items:center; margin-bottom:14px;}
 .modal-head h2{margin:0; font-size:19px;}
-.modal-actions{display:flex; justify-content:space-between; gap:8px; margin-top:16px; padding-top:14px; border-top:1px solid var(--paper-sunk);}
+/* Sticky onderaan i.p.v. helemaal onderaan de (soms lange) formulierscroll: de negatieve
+   margin/padding-truc laat de balk edge-to-edge over de modal-breedte lopen en precies aansluiten
+   op de afgeronde onderhoek, ook als de balk niet 'vast' hoeft te zitten (kort formulier). */
+.modal-actions{
+  display:flex; justify-content:space-between; gap:8px;
+  position:sticky; bottom:0; z-index:5;
+  margin:16px -22px -22px; padding:14px 22px;
+  background:var(--paper-raised); border-top:1px solid var(--paper-sunk); border-radius:0 0 16px 16px;
+}
 .modal-actions-buttons{display:flex; gap:8px;}
 .attach-list{display:flex; flex-direction:column; gap:6px; margin-top:6px;}
 .attach-row{display:flex; align-items:center; gap:8px; background:var(--paper-sunk); border-radius:8px; padding:6px 8px; font-size:12.5px;}
