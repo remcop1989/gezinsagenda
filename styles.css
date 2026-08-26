@@ -38,17 +38,19 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 /* ---------- App shell ---------- */
 #app{max-width:1180px; margin:0 auto; padding:0 16px 20px;}
 .topbar{
-  display:flex; align-items:center; gap:10px;
+  display:flex; flex-direction:column; gap:8px;
   padding:10px 4px 8px;
-  flex-wrap:wrap;
 }
+.topbar-row1{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
 .topbar .brand{
   font-family:var(--font-display); font-weight:800; font-size:19px;
   display:flex; align-items:center; gap:6px; color:var(--ink);
 }
-.brand .dot{width:10px;height:10px;border-radius:50%;background:var(--accent-2); display:inline-block;}
+/* Het puntje was decoratief en vast teal; nu geeft het live de sync-status weer (zie
+   dot-* klassen verderop bij "Sync-status"), zodat dit geen los element hoeft te kosten. */
+.brand .dot{width:10px;height:10px;border-radius:50%;background:var(--line); display:inline-block; transition:background .2s;}
 .tabs{
-  display:flex; gap:4px; margin-left:auto; flex-wrap:wrap;
+  display:flex; gap:4px; flex-wrap:wrap;
   background:var(--paper-sunk); padding:4px; border-radius:999px;
 }
 .tab-btn{
@@ -58,6 +60,14 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 }
 .tab-btn.active{background:var(--ink); color:var(--paper);}
 .tab-btn:not(.active):hover{background:rgba(0,0,0,.06);}
+/* Instellingen-tandwiel: los rechtsboven naast de titel i.p.v. tussen de inhoudstabs, want
+   het is functioneel geen "inhoudsweergave" zoals Agenda/Kindweergave/Lijstjes. */
+.tab-btn.tab-btn-gear{
+  margin-left:auto; flex:0 0 auto; width:34px; height:34px; padding:0;
+  border-radius:50%; font-size:16px; background:var(--paper-sunk);
+  display:inline-flex; align-items:center; justify-content:center;
+}
+.tab-btn.tab-btn-gear.active{background:var(--ink); color:var(--paper);}
 .panel{display:none;}
 .panel.active{display:block; animation:fadein .2s ease;}
 
@@ -96,29 +106,28 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 
 /* ---------- Agenda toolbar ---------- */
 .agenda-toolbar{
-  display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px;
+  display:flex; flex-direction:column; gap:8px; margin-bottom:8px;
 }
-/* Deze twee groepen worden elk als één flex-item behandeld door .agenda-toolbar, zodat ze bij
-   plaatsgebrek als geheel naar een nieuwe regel wrappen i.p.v. dat losse knoppen/label los uit
-   elkaar vallen (bijv. "‹ Vandaag ›" los van een lange datumtekst als "Maandag 17 augustus"). */
-.agenda-nav{display:flex; align-items:center; gap:8px; flex-wrap:nowrap; min-width:0;}
+/* Nav-knoppen, datumlabel en weergave-schakelaar staan als 3 groepen op één regel; flex-wrap
+   laat de weergave-schakelaar als geheel naar een eigen regel vallen op de allersmalste
+   telefoons, i.p.v. dat er iets onleesbaar in elkaar wordt geperst. */
+.agenda-nav{display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0;}
 .agenda-nav-btns{display:flex; align-items:center; gap:8px; flex:0 0 auto;}
-.agenda-controls{display:flex; align-items:center; gap:8px; flex:1 1 auto; min-width:0;}
-.view-switch{display:flex; background:var(--paper-sunk); border-radius:999px; padding:3px; gap:2px;}
+.agenda-controls{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+.view-switch{display:flex; background:var(--paper-sunk); border-radius:999px; padding:3px; gap:2px; flex:0 0 auto;}
 .view-switch button{border:none; background:transparent; padding:6px 12px; border-radius:999px; font-weight:600; font-size:12.5px; color:var(--ink-soft);}
 .view-switch button.active{background:var(--paper-raised); color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.15);}
-/* Vaste 2-regelige kolom (hoofdtekst + jaartal) i.p.v. losse tekstregel: voorkomt dat het label
-   soms 1 en soms 2 regels inneemt, wat de toolbar-hoogte zou laten verspringen. De hoofdtekst
-   knipt af met "…" in het (zeldzame) geval dat zelfs die ene regel niet past — dat verandert
-   nooit de hoogte, alleen de zichtbare breedte. */
+/* Het label toont nu altijd het korte "maand jaar" (zie renderAgenda in app.js), dus een aparte
+   jaartal-regel is niet meer nodig — dit is altijd maar 1 regel. Knipt af met "…" in het
+   (zeldzame) geval dat zelfs die ene, korte regel niet past. */
 .range-label{
-  display:flex; flex-direction:column; justify-content:center;
-  font-family:var(--font-display); font-weight:700; margin:0 4px; min-width:0; flex:1 1 auto;
+  font-family:var(--font-display); font-weight:700; font-size:15px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  margin:0 4px; min-width:0; flex:1 1 auto;
 }
-.range-label-main{font-size:16px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-.range-label-year{font-size:12px; line-height:1.2; opacity:.65; align-self:flex-end; white-space:nowrap;}
 .spacer{flex:1;}
-.member-filters{display:flex; gap:5px; flex-wrap:wrap; margin-bottom:8px;}
+.btn-label-icon{display:none;}
+.member-filters{display:flex; gap:5px; flex-wrap:wrap; flex:1 1 auto; min-width:0;}
 .chip{
   display:inline-flex; align-items:center; gap:5px; padding:4px 9px 4px 5px; border-radius:999px;
   border:1.5px solid var(--line); background:var(--paper-raised); font-size:11.5px; font-weight:600;
@@ -444,10 +453,18 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 .toast.show{opacity:1; transform:translateX(-50%) translateY(-6px);}
 
 /* ---------- Sync-status & gezinscode-toegang ---------- */
-.sync-status{
-  font-size:12px; font-weight:600; color:var(--ink-soft); background:var(--paper-sunk); padding:5px 12px;
-  border-radius:999px; white-space:nowrap;
+/* Vervangt de vroegere altijd-zichtbare pil: het puntje bij de titel (.brand .dot) toont de
+   status via kleur; tekst verschijnt hier alleen wanneer die status niet "gewoon gesynchroniseerd"
+   is (zie updateSyncStatus in app.js) — in de veelvoorkomende gesynchroniseerde toestand is dit
+   element dus leeg/verborgen en kost het geen ruimte. */
+.sync-note{
+  font-size:11.5px; font-weight:600; color:var(--ink-soft);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;
 }
+.dot-connecting{background:var(--accent);}
+.dot-online{background:var(--accent-2);}
+.dot-offline{background:var(--ink-soft); opacity:.5;}
+.dot-error{background:var(--danger);}
 .hh-gate{
   position:fixed; inset:0; background:var(--paper); display:none; align-items:center; justify-content:center;
   padding:20px; z-index:100;
@@ -465,6 +482,11 @@ input,select,textarea{font-family:inherit; font-size:14px;}
   /* Van/Tot datum+tijd blijven op uitdrukkelijk verzoek altijd 2-koloms naast elkaar staan, ook op
      smalle telefoonschermen — hogere specificiteit (.row2.dt-row2) overschrijft de regel hierboven. */
   .row2.dt-row2{grid-template-columns:minmax(0,3fr) minmax(0,2fr);}
+  /* "+ Afspraak" wordt op smalle telefoonschermen een rond icoon-knopje, zodat de filters-regel
+     ruimte overhoudt ook bij meer gezinsleden. */
+  #btn-new-event{width:38px; height:38px; padding:0; border-radius:50%; justify-content:center; flex:0 0 auto;}
+  #btn-new-event .btn-label-full{display:none;}
+  #btn-new-event .btn-label-icon{display:inline-flex;}
   /* .modal-overlay heeft 30px eigen padding rondom; daardoor bleef de sticky knoppenbalk altijd
      30px boven de fysieke onderkant van het scherm zweven, met een stukje formulier zichtbaar
      erachter/eronder. bottom:-30px heft die padding specifiek voor de balk op zodat hij écht tot

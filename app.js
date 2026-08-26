@@ -517,25 +517,27 @@ function renderAgenda(){
   renderMemberFilters();
   const label = document.getElementById('agenda-range-label');
   const body = document.getElementById('agenda-body');
-  // Het jaartal staat altijd op een vaste, eigen regel onder de rest van de datumtekst — ook als
-  // alles samen op één regel zou passen. Zo heeft het label altijd exact dezelfde hoogte (2
-  // regels), wat voorkomt dat de toolbar (en alles eronder) van hoogte verspringt wanneer je
-  // navigeert of van weergave wisselt.
-  function setRangeLabel(main, year){
-    label.innerHTML = `<span class="range-label-main">${escapeHtml(main)}</span><span class="range-label-year">${year}</span>`;
+  // Het label toont alleen nog "maand jaar" — de exacte dag/weekdag staat in week- en
+  // dagweergave al bij de dag-kolommen zelf, dus dat hoeft hier niet dubbelop. Altijd even kort
+  // betekent ook: geen aparte jaartal-regel meer nodig om hoogteverspringen te voorkomen, en het
+  // past zo naast de navigatieknoppen en de weergave-schakelaar op één regel.
+  function setRangeLabel(monthIdx, year){
+    label.textContent = MONTHS[monthIdx] + ' ' + year;
   }
   if(agendaView==='month'){
-    setRangeLabel(MONTHS[agendaDate.getMonth()], agendaDate.getFullYear());
+    setRangeLabel(agendaDate.getMonth(), agendaDate.getFullYear());
     body.innerHTML = renderMonthGrid();
     attachMonthHandlers();
   } else if(agendaView==='week'){
     const mon = getMonday(agendaDate);
-    const sun = addDays(mon,6);
-    setRangeLabel(mon.getDate()+' '+(mon.getMonth()!==sun.getMonth()?MONTHS[mon.getMonth()].slice(0,3)+' ':'')+'– '+sun.getDate()+' '+MONTHS[sun.getMonth()], sun.getFullYear());
+    // Een week die van maand wisselt, wordt (net als bij ISO-weeknummers) toegeschreven aan de
+    // maand van de donderdag in die week.
+    const thu = addDays(mon,3);
+    setRangeLabel(thu.getMonth(), thu.getFullYear());
     body.innerHTML = renderTimeGrid(mon, 7);
     attachTimeGridHandlers();
   } else {
-    setRangeLabel(DOW_LONG[agendaDate.getDay()].replace(/^./,c=>c.toUpperCase())+' '+agendaDate.getDate()+' '+MONTHS[agendaDate.getMonth()], agendaDate.getFullYear());
+    setRangeLabel(agendaDate.getMonth(), agendaDate.getFullYear());
     body.innerHTML = renderTimeGrid(startOfDay(agendaDate), 1);
     attachTimeGridHandlers();
   }
@@ -1959,15 +1961,20 @@ function rerenderAll(){
 }
 
 function updateSyncStatus(mode){
-  const el = document.getElementById('sync-status');
-  if(!el) return;
-  const map = {
+  const dot = document.getElementById('brand-dot');
+  const note = document.getElementById('sync-note');
+  if(!dot || !note) return;
+  dot.classList.remove('dot-connecting','dot-online','dot-offline','dot-error');
+  dot.classList.add('dot-'+mode);
+  const noteMap = {
     connecting: '⏳ Verbinden...',
-    online: '🟢 Gesynchroniseerd',
-    offline: '📴 Offline (wijzigingen synchen zodra er weer internet is)',
+    online: '',
+    offline: '📴 Offline — wijzigingen synchen zodra er weer internet is',
     error: '⚠️ Verbindingsfout — check de Firebase-instellingen',
   };
-  el.textContent = map[mode] || map.connecting;
+  const text = noteMap[mode] ?? '';
+  note.textContent = text;
+  note.classList.toggle('is-hidden', !text);
 }
 
 function startApp(code){
