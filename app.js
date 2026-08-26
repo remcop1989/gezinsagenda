@@ -736,7 +736,7 @@ function renderTimeGrid(startDate, numDays){
       if(dayAllDay.length>maxShow) pillsHtml += `<div class="pill-more">+${dayAllDay.length-maxShow}</div>`;
       alldayRow = `<div class="time-col-allday">${pillsHtml}</div>`;
     }
-    cols += `<div class="time-col ${isToday?'today':''}">
+    cols += `<div class="time-col ${(isToday && numDays>1)?'today':''}">
       <div class="time-col-header">
         <span class="dow">${DOW_SHORT[day.getDay()]}</span><span class="dnum">${day.getDate()}</span>
       </div>
