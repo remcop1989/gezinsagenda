@@ -930,13 +930,18 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
           <div class="hint">Typ, plak of kies hier een pictogram vanaf je toetsenbord (op een telefoon: het emoji-toetsenbord; op een computer meestal met Windows-toets + punt, of op Mac via Ctrl+Cmd+Spatie). "Eenmalig" gebruikt het alleen voor deze afspraak; "Bewaren" zet het ook bij je eigen pictogrammen hierboven, voor volgende keer.${iconIsCustomOnce?' <strong>Dit is nu het actieve, eenmalige pictogram.</strong>':''}</div>
         </div>
       </div>
+      <div class="form-divider"></div>
       <div class="field"><label class="check-pill check-pill--inline"><input type="checkbox" id="f-allday" ${data.allDay?'checked':''}> Hele dag (geen specifieke tijd)</label></div>
       <div class="row2 dt-row2">
-        <div class="field"><label>Van datum <span class="dow-badge" id="f-start-dow">${DOW_SHORT[new Date(startDate+'T00:00:00').getDay()]}</span></label><input type="date" id="f-start-date" required value="${startDate}"></div>
+        <div class="field"><label>Van datum</label>
+          <div class="date-with-dow"><span class="dow-badge" id="f-start-dow">${DOW_SHORT[new Date(startDate+'T00:00:00').getDay()]}</span><input type="date" id="f-start-date" required value="${startDate}"></div>
+        </div>
         <div class="field ${data.allDay?'is-hidden':''}" id="f-start-time-wrap"><label>Van tijd</label><input type="time" id="f-start-time" ${data.allDay?'':'required'} value="${startTime}"></div>
       </div>
       <div class="row2 dt-row2">
-        <div class="field"><label>Tot datum <span class="dow-badge" id="f-end-dow">${DOW_SHORT[new Date(endDate+'T00:00:00').getDay()]}</span></label><input type="date" id="f-end-date" required value="${endDate}"></div>
+        <div class="field"><label>Tot datum</label>
+          <div class="date-with-dow"><span class="dow-badge" id="f-end-dow">${DOW_SHORT[new Date(endDate+'T00:00:00').getDay()]}</span><input type="date" id="f-end-date" required value="${endDate}"></div>
+        </div>
         <div class="field ${data.allDay?'is-hidden':''}" id="f-end-time-wrap"><label>Tot tijd</label><input type="time" id="f-end-time" ${data.allDay?'':'required'} value="${endTime}"></div>
       </div>
 
@@ -1000,8 +1005,10 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
         </div>
       </div>
 
+      <div class="form-divider"></div>
       <div class="field"><label>Locatie</label><input type="text" id="f-location" value="${escapeHtml(data.location)}" placeholder="Bijv. Sportschool"></div>
       <div class="field"><label>Notities</label><textarea id="f-notes" placeholder="Extra informatie...">${escapeHtml(data.notes)}</textarea></div>
+      <div class="form-divider"></div>
       <div class="field"><label>Deelnemers</label><div class="check-grid">${membersHtml}</div>
         <div class="hint">Bij een kind kun je 🙈 aanvinken om diegene wél als deelnemer mee te tellen (zichtbaar in de agenda), maar zonder dat de afspraak in diens kindweergave verschijnt.</div>
       </div>

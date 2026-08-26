@@ -362,11 +362,11 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 /* ---------- Form / modal ---------- */
 .field{margin-bottom:13px;}
 .field label{display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:4px;}
-/* Afgekort weekdagje (bijv. "wo") naast "Van datum"/"Tot datum" — subtiel, niet vetgedrukt, met
-   haakjes via ::before/::after zodat de JS alleen de kale afkorting (uit DOW_SHORT) hoeft te zetten. */
-.dow-badge{font-weight:400; color:var(--ink-soft); margin-left:3px;}
-.dow-badge::before{content:'(';}
-.dow-badge::after{content:')';}
+/* Afgekort weekdagje (bijv. "wo") als klein chipje vóór het datumveld zelf — een native
+   <input type="date"> kan geen eigen prefix-tekst tonen, dus dit staat ernaast in dezelfde flex-rij. */
+.date-with-dow{display:flex; align-items:center; gap:6px;}
+.date-with-dow input[type=date]{flex:1; min-width:0;}
+.dow-badge{flex:0 0 auto; padding:8px 9px; border-radius:8px; background:var(--paper-sunk); color:var(--ink-soft); font-size:12.5px; font-weight:600;}
 .field input[type=text], .field input[type=date], .field input[type=time], .field input[type=number], .field select, .field textarea{
   width:100%; max-width:100%; min-width:0; padding:9px 10px; border:1px solid var(--line); border-radius:8px; background:var(--paper);
 }
@@ -382,6 +382,11 @@ input,select,textarea{font-family:inherit; font-size:14px;}
    waardoor die kolom (en dus het veld) breder werd dan de rest van het formulier. */
 .row2{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px;}
 .row3{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr); gap:10px;}
+/* Van/Tot: tijd-veld heeft aan een smallere kolom genoeg (enkel uu:mm), datum krijgt de rest. */
+.row2.dt-row2{grid-template-columns:minmax(0,3fr) minmax(0,2fr);}
+/* Subtiele scheiding tussen de onderdelen van het afspraakdetails-formulier, met wat extra
+   witruimte eromheen. */
+.form-divider{border:none; border-top:1px solid var(--line); margin:22px 0 18px;}
 .check-grid{display:flex; flex-wrap:wrap; gap:8px;}
 .check-pill{display:flex; align-items:center; gap:6px; border:1.5px solid var(--line); border-radius:999px; padding:6px 12px 6px 8px; font-size:13px; font-weight:600;}
 .check-pill--inline{display:inline-flex;}
@@ -450,7 +455,7 @@ input,select,textarea{font-family:inherit; font-size:14px;}
   .row2,.row3{grid-template-columns:minmax(0,1fr);}
   /* Van/Tot datum+tijd blijven op uitdrukkelijk verzoek altijd 2-koloms naast elkaar staan, ook op
      smalle telefoonschermen — hogere specificiteit (.row2.dt-row2) overschrijft de regel hierboven. */
-  .row2.dt-row2{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
+  .row2.dt-row2{grid-template-columns:minmax(0,3fr) minmax(0,2fr);}
   /* .modal-overlay heeft 30px eigen padding rondom; daardoor bleef de sticky knoppenbalk altijd
      30px boven de fysieke onderkant van het scherm zweven, met een stukje formulier zichtbaar
      erachter/eronder. bottom:-30px heft die padding specifiek voor de balk op zodat hij écht tot
