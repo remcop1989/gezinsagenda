@@ -108,13 +108,13 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 .agenda-toolbar{
   display:flex; flex-direction:column; gap:8px; margin-bottom:8px;
 }
-/* Nav-knoppen, datumlabel en weergave-schakelaar staan als 3 groepen op één regel; flex-wrap
-   laat de weergave-schakelaar als geheel naar een eigen regel vallen op de allersmalste
-   telefoons, i.p.v. dat er iets onleesbaar in elkaar wordt geperst. */
-.agenda-nav{display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0;}
+/* Nav-knoppen + datumlabel als één regel (dit past niet samen met de weergave-schakelaar op
+   dezelfde regel — te breed op een telefoon); de schakelaar staat daarom op de tweede regel,
+   samen met de filter- en afspraak-knop. */
+.agenda-nav{display:flex; align-items:center; gap:8px; flex-wrap:nowrap; min-width:0;}
 .agenda-nav-btns{display:flex; align-items:center; gap:8px; flex:0 0 auto;}
 .agenda-controls{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
-.view-switch{display:flex; background:var(--paper-sunk); border-radius:999px; padding:3px; gap:2px; flex:0 0 auto;}
+.view-switch{display:flex; background:var(--paper-sunk); border-radius:999px; padding:3px; gap:2px;}
 .view-switch button{border:none; background:transparent; padding:6px 12px; border-radius:999px; font-weight:600; font-size:12.5px; color:var(--ink-soft);}
 .view-switch button.active{background:var(--paper-raised); color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.15);}
 /* Het label toont nu altijd het korte "maand jaar" (zie renderAgenda in app.js), dus een aparte
@@ -127,14 +127,9 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 }
 .spacer{flex:1;}
 .btn-label-icon{display:none;}
-.member-filters{display:flex; gap:5px; flex-wrap:wrap; flex:1 1 auto; min-width:0;}
-.chip{
-  display:inline-flex; align-items:center; gap:5px; padding:4px 9px 4px 5px; border-radius:999px;
-  border:1.5px solid var(--line); background:var(--paper-raised); font-size:11.5px; font-weight:600;
-  color:var(--ink-soft); opacity:.55; transition:opacity .15s, border-color .15s;
-}
-.chip.on{opacity:1;}
-.chip .swatch{width:14px;height:14px;border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:9px;}
+/* Klein bolletje op de "Filter"-knop, zichtbaar zodra er een actief gezinslid-filter is
+   ingesteld (agendaVisibleMembers !== null) — zie updateFilterBadge in app.js. */
+.filter-badge{display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--accent-2); margin-left:5px; vertical-align:middle;}
 
 /* ---------- Month grid: doorlopende balken (FamilyWall-stijl) ---------- */
 .month-grid{display:flex; flex-direction:column; gap:4px;}
@@ -461,10 +456,10 @@ input,select,textarea{font-family:inherit; font-size:14px;}
   font-size:11.5px; font-weight:600; color:var(--ink-soft);
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;
 }
-.dot-connecting{background:var(--accent);}
-.dot-online{background:var(--accent-2);}
-.dot-offline{background:var(--ink-soft); opacity:.5;}
-.dot-error{background:var(--danger);}
+.brand .dot.dot-connecting{background:var(--accent);}
+.brand .dot.dot-online{background:var(--accent-2);}
+.brand .dot.dot-offline{background:var(--ink-soft); opacity:.5;}
+.brand .dot.dot-error{background:var(--danger);}
 .hh-gate{
   position:fixed; inset:0; background:var(--paper); display:none; align-items:center; justify-content:center;
   padding:20px; z-index:100;

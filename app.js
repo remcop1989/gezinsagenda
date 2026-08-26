@@ -466,29 +466,53 @@ function stepAgenda(dir){
   renderAgenda();
 }
 
-function renderMemberFilters(){
-  const wrap = document.getElementById('agenda-member-filters');
-  if(state.familyMembers.length===0){ wrap.innerHTML=''; return; }
-  // De "Geen deelnemer"-chip verschijnt alleen als daar ook echt afspraken voor zijn — zodra
-  // de laatste zo'n afspraak een deelnemer heeft gekregen (of is verwijderd), verdwijnt de chip
+document.getElementById('btn-open-filters').addEventListener('click', openMemberFilterModal);
+
+/* Klein bolletje op de "Filter"-knop: zichtbaar zodra er een actief filter staat
+   (agendaVisibleMembers !== null betekent "niet alle gezinsleden getoond"). */
+function updateFilterBadge(){
+  const badge = document.getElementById('filter-badge');
+  if(!badge) return;
+  badge.classList.toggle('is-hidden', agendaVisibleMembers===null);
+}
+
+/* Filter-paneel (in de bestaande modal): aan/uit-vinkjes per gezinslid i.p.v. de vroegere,
+   altijd-zichtbare rij losse chips — dat scheelt een hele regel in de agenda-toolbar. Elke
+   wijziging past de agenda meteen aan én ververst dit paneel zelf (kleur/vinkjes), zodat je
+   meerdere leden achter elkaar kunt aan/uitvinken zonder opnieuw te hoeven openen. */
+function openMemberFilterModal(){
+  // De "Geen deelnemer"-optie verschijnt alleen als daar ook echt afspraken voor zijn — zodra
+  // de laatste zo'n afspraak een deelnemer heeft gekregen (of is verwijderd), verdwijnt hij
   // vanzelf weer. Dit staat los van de instelling "Deelnemer verplicht bij nieuwe afspraken":
-  // die instelling regelt alleen nieuwe/bewerkte afspraken, niet of de chip zichtbaar is.
-  const showNoneChip = countEventsWithoutParticipants() > 0;
-  const all = state.familyMembers.map(m=>m.id).concat(showNoneChip ? [NONE_MEMBER_ID] : []);
-  wrap.innerHTML = state.familyMembers.map(m=>{
+  // die instelling regelt alleen nieuwe/bewerkte afspraken, niet of deze optie zichtbaar is.
+  const showNoneOption = countEventsWithoutParticipants() > 0;
+  const all = state.familyMembers.map(m=>m.id).concat(showNoneOption ? [NONE_MEMBER_ID] : []);
+  const membersHtml = state.familyMembers.map(m=>{
     const on = !agendaVisibleMembers || agendaVisibleMembers.includes(m.id);
-    return `<button class="chip ${on?'on':''}" data-mid="${m.id}" style="border-color:${on?m.color:'var(--line)'}">
-      <span class="swatch" style="background:${m.color}">${m.icon}</span>${escapeHtml(m.name)}
-    </button>`;
-  }).join('') + (showNoneChip ? (()=>{
+    return `<label class="check-pill" style="border-color:${on?m.color:'var(--line)'}">
+      <input type="checkbox" class="filter-member-cb" value="${m.id}" ${on?'checked':''}> ${m.icon} ${escapeHtml(m.name)}
+    </label>`;
+  }).join('') + (showNoneOption ? (()=>{
     const on = !agendaVisibleMembers || agendaVisibleMembers.includes(NONE_MEMBER_ID);
-    return `<button class="chip ${on?'on':''}" data-mid="${NONE_MEMBER_ID}" style="border-color:${on?'var(--ink-soft)':'var(--line)'}">
-      <span class="swatch" style="background:var(--ink-soft)">–</span>Geen deelnemer
-    </button>`;
+    return `<label class="check-pill" style="border-color:${on?'var(--ink-soft)':'var(--line)'}">
+      <input type="checkbox" class="filter-member-cb" value="${NONE_MEMBER_ID}" ${on?'checked':''}> – Geen deelnemer
+    </label>`;
   })() : '');
-  wrap.querySelectorAll('.chip').forEach(chip=>{
-    chip.addEventListener('click', ()=>{
-      const id = chip.dataset.mid;
+
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-head"><h2>Filter gezinsleden</h2></div>
+    <div class="check-grid">${membersHtml || '<span class="hint">Nog geen gezinsleden toegevoegd.</span>'}</div>
+    <div class="modal-actions">
+      <div>${state.familyMembers.length ? '<button type="button" class="btn" id="btn-filter-showall">Alles tonen</button>' : ''}</div>
+      <div class="modal-actions-buttons">
+        <button type="button" class="btn btn-primary" id="btn-filter-done">Sluiten</button>
+      </div>
+    </div>
+  `;
+
+  document.querySelectorAll('.filter-member-cb').forEach(cb=>{
+    cb.addEventListener('change', ()=>{
+      const id = cb.value;
       if(!agendaVisibleMembers) agendaVisibleMembers = all.slice();
       if(agendaVisibleMembers.includes(id)){
         agendaVisibleMembers = agendaVisibleMembers.filter(x=>x!==id);
@@ -497,8 +521,17 @@ function renderMemberFilters(){
       }
       if(agendaVisibleMembers.length===all.length) agendaVisibleMembers = null;
       renderAgenda();
+      openMemberFilterModal();
     });
   });
+  const showAllBtn = document.getElementById('btn-filter-showall');
+  if(showAllBtn) showAllBtn.addEventListener('click', ()=>{
+    agendaVisibleMembers = null;
+    renderAgenda();
+    openMemberFilterModal();
+  });
+  document.getElementById('btn-filter-done').addEventListener('click', closeModal);
+  openModal();
 }
 
 /* Hoeveel verticale ruimte is er nog over onder onze eigen "chrome" (topbar/tabs/toolbar/filters),
@@ -514,7 +547,7 @@ function getAvailableAgendaHeight(){
 }
 
 function renderAgenda(){
-  renderMemberFilters();
+  updateFilterBadge();
   const label = document.getElementById('agenda-range-label');
   const body = document.getElementById('agenda-body');
   // Het label toont alleen nog "maand jaar" — de exacte dag/weekdag staat in week- en
