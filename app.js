@@ -1383,14 +1383,14 @@ function closeModal(){ document.getElementById('modal-overlay').classList.remove
 document.getElementById('modal-overlay').addEventListener('click', e=>{
   if(e.target.id==='modal-overlay') closeModal();
 });
-function confirmDialog(msg, onYes){
+function confirmDialog(msg, onYes, confirmLabel='Ja, verwijderen'){
   document.getElementById('alert-content').innerHTML = `
     <div class="modal-head"><h2>Weet je het zeker?</h2></div>
     <p>${escapeHtml(msg)}</p>
     <div class="modal-actions"><div></div>
       <div class="modal-actions-buttons">
         <button class="btn" id="cd-no">Annuleren</button>
-        <button class="btn btn-danger" id="cd-yes">Ja, verwijderen</button>
+        <button class="btn btn-danger" id="cd-yes">${escapeHtml(confirmLabel)}</button>
       </div>
     </div>`;
   document.getElementById('cd-no').addEventListener('click', closeAlert);
@@ -1974,7 +1974,7 @@ document.getElementById('import-file').addEventListener('change', (e)=>{
         closeModal();
         renderAgenda(); renderKid(); renderLists(); renderSettings();
         showToast('Gegevens geïmporteerd');
-      });
+      }, 'Ja, vervangen');
     }catch(err){
       showToast('Kon bestand niet lezen: ongeldig back-upbestand');
     }
@@ -2077,7 +2077,7 @@ document.getElementById('btn-change-code').addEventListener('click', ()=>{
     localStorage.removeItem('gezinsagenda-hh-code');
     closeModal();
     location.reload();
-  });
+  }, 'Ja, uitloggen');
 });
 
 /* ---- Meldingen (best-effort, alleen als de app onlangs open is geweest) ---- */
