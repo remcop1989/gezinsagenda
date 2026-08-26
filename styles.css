@@ -362,11 +362,6 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 /* ---------- Form / modal ---------- */
 .field{margin-bottom:13px;}
 .field label{display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:4px;}
-/* Afgekort weekdagje (bijv. "wo") als klein chipje vóór het datumveld zelf — een native
-   <input type="date"> kan geen eigen prefix-tekst tonen, dus dit staat ernaast in dezelfde flex-rij. */
-.date-with-dow{display:flex; align-items:center; gap:6px;}
-.date-with-dow input[type=date]{flex:1; min-width:0;}
-.dow-badge{flex:0 0 auto; padding:8px 9px; border-radius:8px; background:var(--paper-sunk); color:var(--ink-soft); font-size:12.5px; font-weight:600;}
 .field input[type=text], .field input[type=date], .field input[type=time], .field input[type=number], .field select, .field textarea{
   width:100%; max-width:100%; min-width:0; padding:9px 10px; border:1px solid var(--line); border-radius:8px; background:var(--paper);
 }
@@ -375,6 +370,20 @@ input,select,textarea{font-family:inherit; font-size:14px;}
    appearance:none dwingt het standaard CSS-boxmodel af; min-width:0 op de grid-items zelf
    voorkomt dat de kolom alsnog oprekt door de intrinsieke inhoudsbreedte van het native widget. */
 .field input[type=date], .field input[type=time]{ -webkit-appearance:none; appearance:none; }
+/* Afgekort weekdagje (bijv. "wo") écht ín het datumveld: een native <input type="date"> kan geen
+   eigen prefix-tekst tonen, dus het badge wordt over de linkerrand van het veld gelegd (positie
+   absoluut binnen de relatief gepositioneerde wrapper) met pointer-events:none, zodat een tik erop
+   gewoon de datumkiezer opent. Vaste breedte (i.p.v. meebewegend met de tekst) is bewust: "wo" en
+   "di" renderen anders breed in een proportioneel lettertype, en zonder vaste breedte schoof het
+   datumveld van "Van" en "Tot" daardoor niet gelijk op.*/
+.date-with-dow{position:relative;}
+.date-with-dow input[type=date]{padding-left:40px;}
+.dow-badge{
+  position:absolute; left:6px; top:50%; transform:translateY(-50%);
+  width:26px; text-align:center; border-radius:5px; padding:3px 0;
+  background:var(--paper-sunk); color:var(--ink-soft); font-size:11px; font-weight:600;
+  pointer-events:none;
+}
 .row2 > .field, .row3 > .field{min-width:0;}
 .field textarea{min-height:60px; resize:vertical;}
 /* minmax(0,1fr) i.p.v. kale 1fr: zonder dit respecteert een grid-kolom niet de opgegeven breedte
