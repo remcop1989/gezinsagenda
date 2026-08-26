@@ -362,6 +362,11 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 /* ---------- Form / modal ---------- */
 .field{margin-bottom:13px;}
 .field label{display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:4px;}
+/* Afgekort weekdagje (bijv. "wo") naast "Van datum"/"Tot datum" — subtiel, niet vetgedrukt, met
+   haakjes via ::before/::after zodat de JS alleen de kale afkorting (uit DOW_SHORT) hoeft te zetten. */
+.dow-badge{font-weight:400; color:var(--ink-soft); margin-left:3px;}
+.dow-badge::before{content:'(';}
+.dow-badge::after{content:')';}
 .field input[type=text], .field input[type=date], .field input[type=time], .field input[type=number], .field select, .field textarea{
   width:100%; max-width:100%; min-width:0; padding:9px 10px; border:1px solid var(--line); border-radius:8px; background:var(--paper);
 }
@@ -407,9 +412,6 @@ input,select,textarea{font-family:inherit; font-size:14px;}
   background:var(--paper-raised); border-top:1px solid var(--paper-sunk); border-radius:0 0 16px 16px;
 }
 .modal-actions-buttons{display:flex; gap:8px;}
-.attach-list{display:flex; flex-direction:column; gap:6px; margin-top:6px;}
-.attach-row{display:flex; align-items:center; gap:8px; background:var(--paper-sunk); border-radius:8px; padding:6px 8px; font-size:12.5px;}
-.attach-row a{color:var(--accent-2-ink); text-decoration:none; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 .hint{font-size:11.5px; color:var(--ink-soft); margin-top:4px;}
 .empty-state{text-align:center; padding:40px 20px; color:var(--ink-soft);}
 .empty-state .em{font-size:40px; display:block; margin-bottom:10px;}
@@ -446,6 +448,9 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 
 @media (max-width: 720px){
   .row2,.row3{grid-template-columns:minmax(0,1fr);}
+  /* Van/Tot datum+tijd blijven op uitdrukkelijk verzoek altijd 2-koloms naast elkaar staan, ook op
+     smalle telefoonschermen — hogere specificiteit (.row2.dt-row2) overschrijft de regel hierboven. */
+  .row2.dt-row2{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
   /* .modal-overlay heeft 30px eigen padding rondom; daardoor bleef de sticky knoppenbalk altijd
      30px boven de fysieke onderkant van het scherm zweven, met een stukje formulier zichtbaar
      erachter/eronder. bottom:-30px heft die padding specifiek voor de balk op zodat hij écht tot

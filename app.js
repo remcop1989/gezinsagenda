@@ -837,7 +837,7 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
   const isEdit = !!ev;
   const data = ev ? JSON.parse(JSON.stringify(ev)) : {
     id: uid(), title:'', kindTekst:'', start:'', end:'', location:'', notes:'',
-    icon:'📅', participants: (prefill && prefill.participants) ? prefill.participants.slice() : [], hiddenFromKidView: [], attachments: [], allDay:false,
+    icon:'📅', participants: (prefill && prefill.participants) ? prefill.participants.slice() : [], hiddenFromKidView: [], allDay:false,
     recurrence: {freq:'none', interval:1, endType:'never', endDate:'', count:5}
   };
   // Bij "alleen deze afspraak" / "deze en alle volgende" bewerken we niet de ankerdatum van de
@@ -931,18 +931,13 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
         </div>
       </div>
       <div class="field"><label class="check-pill check-pill--inline"><input type="checkbox" id="f-allday" ${data.allDay?'checked':''}> Hele dag (geen specifieke tijd)</label></div>
-      <div class="row2">
-        <div class="field"><label>Van datum</label><input type="date" id="f-start-date" required value="${startDate}"></div>
+      <div class="row2 dt-row2">
+        <div class="field"><label>Van datum <span class="dow-badge" id="f-start-dow">${DOW_SHORT[new Date(startDate+'T00:00:00').getDay()]}</span></label><input type="date" id="f-start-date" required value="${startDate}"></div>
         <div class="field ${data.allDay?'is-hidden':''}" id="f-start-time-wrap"><label>Van tijd</label><input type="time" id="f-start-time" ${data.allDay?'':'required'} value="${startTime}"></div>
       </div>
-      <div class="row2">
-        <div class="field"><label>Tot datum</label><input type="date" id="f-end-date" required value="${endDate}"></div>
+      <div class="row2 dt-row2">
+        <div class="field"><label>Tot datum <span class="dow-badge" id="f-end-dow">${DOW_SHORT[new Date(endDate+'T00:00:00').getDay()]}</span></label><input type="date" id="f-end-date" required value="${endDate}"></div>
         <div class="field ${data.allDay?'is-hidden':''}" id="f-end-time-wrap"><label>Tot tijd</label><input type="time" id="f-end-time" ${data.allDay?'':'required'} value="${endTime}"></div>
-      </div>
-      <div class="field"><label>Locatie</label><input type="text" id="f-location" value="${escapeHtml(data.location)}" placeholder="Bijv. Sportschool"></div>
-      <div class="field"><label>Notities</label><textarea id="f-notes" placeholder="Extra informatie...">${escapeHtml(data.notes)}</textarea></div>
-      <div class="field"><label>Deelnemers</label><div class="check-grid">${membersHtml}</div>
-        <div class="hint">Bij een kind kun je 🙈 aanvinken om diegene wél als deelnemer mee te tellen (zichtbaar in de agenda), maar zonder dat de afspraak in diens kindweergave verschijnt.</div>
       </div>
 
       <div class="field"><label>Herhaling</label>
@@ -1005,10 +1000,10 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
         </div>
       </div>
 
-      <div class="field"><label>Bijlagen</label>
-        <input type="file" id="f-attach-input" multiple>
-        <div class="attach-list" id="attach-list"></div>
-        <div class="hint">Bijlagen worden lokaal opgeslagen in je browser. Houd bestanden klein.</div>
+      <div class="field"><label>Locatie</label><input type="text" id="f-location" value="${escapeHtml(data.location)}" placeholder="Bijv. Sportschool"></div>
+      <div class="field"><label>Notities</label><textarea id="f-notes" placeholder="Extra informatie...">${escapeHtml(data.notes)}</textarea></div>
+      <div class="field"><label>Deelnemers</label><div class="check-grid">${membersHtml}</div>
+        <div class="hint">Bij een kind kun je 🙈 aanvinken om diegene wél als deelnemer mee te tellen (zichtbaar in de agenda), maar zonder dat de afspraak in diens kindweergave verschijnt.</div>
       </div>
 
       <div class="modal-actions">
@@ -1020,30 +1015,6 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
       </div>
     </form>
   `;
-
-  let attachments = data.attachments ? JSON.parse(JSON.stringify(data.attachments)) : [];
-  function renderAttachList(){
-    document.getElementById('attach-list').innerHTML = attachments.map(a=>
-      `<div class="attach-row"><a href="${a.dataUrl}" download="${escapeHtml(a.name)}">📎 ${escapeHtml(a.name)}</a><button type="button" class="btn btn-sm" data-aid="${a.id}">✕</button></div>`
-    ).join('');
-    document.querySelectorAll('#attach-list button').forEach(b=>{
-      b.addEventListener('click', ()=>{ attachments = attachments.filter(a=>a.id!==b.dataset.aid); renderAttachList(); });
-    });
-  }
-  renderAttachList();
-
-  document.getElementById('f-attach-input').addEventListener('change', (e)=>{
-    const files = Array.from(e.target.files);
-    files.forEach(file=>{
-      const reader = new FileReader();
-      reader.onload = ()=>{
-        attachments.push({id:uid(), name:file.name, dataUrl:reader.result, size:file.size});
-        renderAttachList();
-      };
-      reader.readAsDataURL(file);
-    });
-    e.target.value = '';
-  });
 
   document.getElementById('ev-emoji-pick').addEventListener('click', e=>{
     const b = e.target.closest('.picto-btn'); if(!b) return;
@@ -1153,6 +1124,17 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
   }
   startDateEl.addEventListener('change', shiftEndWithStart);
   startTimeEl.addEventListener('change', shiftEndWithStart);
+
+  // Afgekort weekdagje (bijv. "wo") naast "Van datum"/"Tot datum" actueel houden zodra de datum
+  // wijzigt — ook wanneer "Tot" automatisch meeschuift via shiftEndWithStart hierboven.
+  const startDowEl = document.getElementById('f-start-dow');
+  const endDowEl = document.getElementById('f-end-dow');
+  function updateDowBadges(){
+    if(startDateEl.value) startDowEl.textContent = DOW_SHORT[new Date(startDateEl.value+'T00:00:00').getDay()];
+    if(endDateEl.value) endDowEl.textContent = DOW_SHORT[new Date(endDateEl.value+'T00:00:00').getDay()];
+  }
+  startDateEl.addEventListener('change', updateDowBadges);
+  endDateEl.addEventListener('change', updateDowBadges);
 
 
   // "Tot" vóór "Van" wordt niet meer live gevalideerd tijdens het instellen
@@ -1288,7 +1270,6 @@ function buildAndOpenEventModal(ev, prefill, occCtx, editScope){
       notes: document.getElementById('f-notes').value.trim(),
       participants,
       hiddenFromKidView,
-      attachments,
       allDay: isAllDay,
       recurrence
     };
