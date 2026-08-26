@@ -216,17 +216,20 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 /* Twee vaste rijen (i.p.v. één flex-wrap rij) zodat de header in week- en
    dagweergave er altijd hetzelfde uitziet, ongeacht de lengte van het datumlabel. */
 .kid-header{display:flex; flex-direction:column; gap:12px; margin-bottom:16px;}
-.kid-toolbar-row1{display:flex; align-items:center; gap:12px; flex-wrap:wrap;}
+.kid-toolbar-row1{display:flex; align-items:center; gap:12px; flex-wrap:nowrap; min-width:0;}
 .kid-toolbar-row2{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
-.kid-select{display:flex; gap:8px; flex-wrap:wrap;}
+.kid-select{display:flex; gap:8px; flex-wrap:wrap; flex:0 0 auto;}
 .kid-btn{
   display:flex; align-items:center; gap:8px; padding:8px 16px 8px 8px; border-radius:999px;
   border:2px solid var(--line); background:var(--paper-raised); font-weight:700; font-family:var(--font-display); font-size:15px;
 }
 .kid-btn .av{width:34px;height:34px;border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px;}
 .kid-btn.active{border-color:var(--ink); background:var(--ink); color:var(--paper);}
-.kid-nav{display:flex; align-items:center; gap:10px; margin:0 auto;}
-.kid-nav .lbl{font-family:var(--font-display); font-weight:700; font-size:20px; min-width:200px; text-align:center;}
+/* flex:1 + min-width:0 laat de navigatie (i.p.v. de hele rij) krimpen wanneer de
+   datumtekst lang is (bijv. "Donderdag 27 augustus"); de tekst wordt dan afgekapt
+   met ellipsis in plaats van dat de rij naar een tweede regel springt. */
+.kid-nav{display:flex; align-items:center; gap:10px; flex:1 1 auto; min-width:0; justify-content:center;}
+.kid-nav .lbl{font-family:var(--font-display); font-weight:700; font-size:20px; text-align:center; flex:1 1 auto; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .kid-viewswitch{display:flex; gap:4px; background:var(--paper-sunk); padding:4px; border-radius:999px;}
 .kid-viewswitch button{border:none; background:transparent; padding:8px 16px; border-radius:999px; font-weight:700; font-family:var(--font-display); font-size:14px; color:var(--ink-soft);}
 .kid-viewswitch button.active{background:var(--paper-raised); color:var(--ink);}
@@ -475,7 +478,7 @@ input,select,textarea{font-family:inherit; font-size:14px;}
     color:var(--accent-2); font-size:16px; font-weight:700; line-height:1;
   }
   .lists-toolbar .btn{width:100%; justify-content:center;}
-  .kid-nav .lbl{min-width:0; font-size:16px;}
+  .kid-nav .lbl{font-size:16px;}
 }
 
 /* ---------- Losse, eenmalige plek-specifieke tweaks (voorheen inline styles in index.html) ---------- */
