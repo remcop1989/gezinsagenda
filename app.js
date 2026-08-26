@@ -1498,7 +1498,7 @@ document.getElementById('kid-today').addEventListener('click', ()=>{ kidDate = n
 document.getElementById('btn-kid-add').addEventListener('click', ()=>{
   if(!kidId){ showToast('Voeg eerst een gezinslid toe bij Instellingen'); return; }
   const d = kidView==='day' ? fmtISODate(kidDate) : fmtISODate(getMonday(kidDate));
-  openEventModal(null, {date:d, hour:nextFullHour(), participants:[kidId]});
+  openEventModal(null, {date:d, hour:nextFullHourCapped(), participants:[kidId]});
 });
 function stepKid(dir){
   kidDate = kidView==='week' ? addDays(kidDate,7*dir) : addDays(kidDate,dir);
@@ -1582,7 +1582,7 @@ function renderKid(){
     body.innerHTML = `<div class="train">${wagons}</div>`;
     autofitSingleLineText('.picto-row .txt', 16, 0.38);
     body.querySelectorAll('.wagon-add').forEach(b=>{
-      b.addEventListener('click', ()=> openEventModal(null, {date:b.dataset.date, hour:nextFullHour(), participants:[kidId]}));
+      b.addEventListener('click', ()=> openEventModal(null, {date:b.dataset.date, hour:nextFullHourCapped(), participants:[kidId]}));
     });
     body.querySelectorAll('.picto-row').forEach(r=>{
       r.addEventListener('click', ()=> openEventModal(eventById(r.dataset.eid), null, {occStart:new Date(r.dataset.occstart)}));
