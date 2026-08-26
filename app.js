@@ -1528,7 +1528,12 @@ function renderKid(){
     return;
   }
   const m = memberById(kidId);
-  document.getElementById('btn-kid-add').style.setProperty('--member-color', m.color);
+  const addBtn = document.getElementById('btn-kid-add');
+  addBtn.style.setProperty('--member-color', m.color);
+  // In weekweergave heeft elke dag zijn eigen plusje (zie wagon-add); de losse
+  // knop bovenin is daar dubbelop en wordt verborgen. In dagweergave blijft
+  // deze de enige manier om iets toe te voegen.
+  addBtn.classList.toggle('is-hidden', kidView==='week');
 
   if(kidView==='week'){
     const mon = getMonday(kidDate);

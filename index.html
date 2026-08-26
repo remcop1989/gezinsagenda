@@ -58,19 +58,23 @@
   <!-- KIND -->
   <section class="panel" id="panel-kind">
     <div class="kid-header">
-      <div class="kid-select" id="kid-select"></div>
-      <div class="kid-nav">
-        <button class="icon-btn" id="kid-prev">‹</button>
-        <div class="lbl" id="kid-range-label"></div>
-        <button class="icon-btn" id="kid-next">›</button>
+      <div class="kid-toolbar-row1">
+        <div class="kid-select" id="kid-select"></div>
+        <div class="kid-nav">
+          <button class="icon-btn" id="kid-prev">‹</button>
+          <div class="lbl" id="kid-range-label"></div>
+          <button class="icon-btn" id="kid-next">›</button>
+        </div>
       </div>
-      <button class="btn btn-sm" id="kid-today">Vandaag</button>
-      <div class="kid-viewswitch" id="kid-view-switch">
-        <button data-view="week" class="active">Week</button>
-        <button data-view="day">Dag</button>
+      <div class="kid-toolbar-row2">
+        <button class="btn btn-sm" id="kid-today">Vandaag</button>
+        <div class="kid-viewswitch" id="kid-view-switch">
+          <button data-view="week" class="active">Week</button>
+          <button data-view="day">Dag</button>
+        </div>
+        <div class="spacer"></div>
+        <button class="kid-add-btn" id="btn-kid-add">+ Toevoegen</button>
       </div>
-      <div class="spacer"></div>
-      <button class="kid-add-btn" id="btn-kid-add">+ Toevoegen</button>
     </div>
     <div id="kid-body"></div>
   </section>

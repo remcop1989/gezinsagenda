@@ -213,7 +213,11 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 .time-col-allday .pill{max-width:100%;}
 
 /* ---------- Kid view ---------- */
-.kid-header{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px;}
+/* Twee vaste rijen (i.p.v. één flex-wrap rij) zodat de header in week- en
+   dagweergave er altijd hetzelfde uitziet, ongeacht de lengte van het datumlabel. */
+.kid-header{display:flex; flex-direction:column; gap:12px; margin-bottom:16px;}
+.kid-toolbar-row1{display:flex; align-items:center; gap:12px; flex-wrap:wrap;}
+.kid-toolbar-row2{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
 .kid-select{display:flex; gap:8px; flex-wrap:wrap;}
 .kid-btn{
   display:flex; align-items:center; gap:8px; padding:8px 16px 8px 8px; border-radius:999px;
