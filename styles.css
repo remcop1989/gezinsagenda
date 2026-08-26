@@ -280,7 +280,6 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 .rail-now .line{height:3px; background:var(--now-line); border-radius:3px;}
 .kid-empty{text-align:center; padding:50px 20px; color:var(--ink-soft);}
 .kid-empty .em{font-size:48px; display:block; margin-bottom:8px;}
-.kid-empty-actions{margin-top:14px;}
 
 /* ---------- Lists ---------- */
 .lists-toolbar{display:flex; justify-content:flex-end; margin-bottom:22px;}

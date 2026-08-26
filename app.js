@@ -1595,12 +1595,7 @@ function renderKid(){
     const isToday = sameDay(kidDate, today);
     const nowMinutes = today.getHours()*60+today.getMinutes();
     if(occs.length===0){
-      body.innerHTML = `<div class="kid-empty"><span class="em">🌤️</span>Niets gepland voor ${escapeHtml(m.name)} op deze dag!
-        <div class="kid-empty-actions"><button class="btn btn-accent" id="kid-empty-add">+ Iets toevoegen</button></div>
-      </div>`;
-      document.getElementById('kid-empty-add').addEventListener('click', ()=>{
-        openEventModal(null, {date:fmtISODate(kidDate), hour:nextFullHour(), participants:[kidId]});
-      });
+      body.innerHTML = `<div class="kid-empty"><span class="em">🌤️</span>Niets gepland voor ${escapeHtml(m.name)} op deze dag!</div>`;
       return;
     }
     let html = '<div class="rail">';
